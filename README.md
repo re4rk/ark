@@ -2,7 +2,7 @@
 
 [![Twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2Fgeminikims)](https://twitter.com/geminikims)
 [![Youtube](https://img.shields.io/youtube/channel/views/UCDh8zEDofOcrOMAOnSVL9Tg?label=Youtube&style=social)](https://www.youtube.com/@geminikims)
-[![CI](https://github.com/team-dodn/spring-boot-kotlin-template/actions/workflows/ci.yml/badge.svg)](https://github.com/team-dodn/spring-boot-kotlin-template/actions/workflows/ci.yml)
+[![CI](https://github.com/team-ark/spring-boot-kotlin-template/actions/workflows/ci.yml/badge.svg)](https://github.com/team-ark/spring-boot-kotlin-template/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 
 This is not the best structure. This is a good basic structure to use early in the project when productivity is important.
