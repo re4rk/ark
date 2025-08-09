@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: client-s3-test
+  config:
+    import:
+      - s3.yml
+
+

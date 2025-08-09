@@ -7,7 +7,8 @@ include(
     "tests:api-docs",
     "support:logging",
     "support:monitoring",
-    "clients:client-example"
+    "clients:client-example",
+    "clients:client-s3",
 )
 
 pluginManagement {
