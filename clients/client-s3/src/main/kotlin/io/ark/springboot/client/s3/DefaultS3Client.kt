@@ -1,7 +1,5 @@
 package io.ark.springboot.client.s3
 
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -14,10 +12,8 @@ import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 import software.amazon.awssdk.services.s3.S3Client as AwsS3Client
 
-@Component
 class DefaultS3Client(
     private val awsS3Client: AwsS3Client,
-    @Value("\${storage.s3.bucket}")
     private val bucket: String,
 ) : S3Client {
 
