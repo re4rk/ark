@@ -54,11 +54,9 @@ fun fields(vararg fields: Field) = fields.map { it.descriptor }
 /**
  * 요청 필드를 정의하기 위한 DSL 함수
  */
-fun requestFields(vararg fields: Field) = 
-    PayloadDocumentation.requestFields(fields.map { it.descriptor })
+fun requestFields(vararg fields: Field) = PayloadDocumentation.requestFields(fields.map { it.descriptor })
 
 /**
  * 응답 필드를 정의하기 위한 DSL 함수
  */
-fun responseFields(vararg fields: Field) = 
-    PayloadDocumentation.responseFields(fields.map { it.descriptor })
+fun responseFields(vararg fields: Field) = PayloadDocumentation.responseFields(fields.map { it.descriptor })

@@ -6,11 +6,11 @@ import org.springframework.stereotype.Service
 
 @Service
 class ExampleService(
-    private val exampleRepository: ExampleRepository
+    private val exampleRepository: ExampleRepository,
 ) {
     fun createExample(exampleData: ExampleData): ExampleResult {
         val a = exampleRepository.save(ExampleEntity(exampleColumn = exampleData.value))
-        return ExampleResult(id = a.id, data = a.exampleColumn,)
+        return ExampleResult(id = a.id, data = a.exampleColumn)
     }
 
     fun getExample(id: Long): ExampleResult {

@@ -2,7 +2,6 @@ package io.ark.springboot.core.api.controller.v1
 
 import io.ark.springboot.core.api.controller.v1.request.ExampleRequestDto
 import io.ark.springboot.core.api.controller.v1.response.ExampleResponseDto
-import io.ark.springboot.core.domain.ExampleData
 import io.ark.springboot.core.domain.ExampleService
 import io.ark.springboot.core.support.response.ApiResponse
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RequestMapping("/examples")
