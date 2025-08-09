@@ -28,8 +28,6 @@ class FileControllerTest : RestDocsTest() {
     @BeforeEach
     fun setUp() {
         fileService = mockk()
-        every { fileService.validateFileType(any()) } returns true
-        every { fileService.validateFileSize(any()) } returns true
         controller = FileController(fileService)
         mockMvc = mockController(controller)
     }

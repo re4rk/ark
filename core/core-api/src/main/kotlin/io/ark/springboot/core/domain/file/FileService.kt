@@ -19,6 +19,13 @@ class FileService(
         originalName: String,
         contentType: String?,
     ): FileEntity {
+        if (!validateFileType(contentType ?: "")) {
+            throw IllegalArgumentException("지원하지 않는 파일 형식입니다")
+        }
+        if (!validateFileSize(bytes.size.toLong())) {
+            throw IllegalArgumentException("파일 크기가 제한을 초과했습니다")
+        }
+
         // S3 업로드
         val result: StorageUploadResult = s3Client.upload(bytes, originalName, contentType)
         // 메타데이터 저장 (status=UPLOADED)
@@ -32,7 +39,10 @@ class FileService(
         return fileRepository.save(entity)
     }
 
-    fun getFile(id: Long): FileEntity? = fileRepository.findById(id).orElse(null)
+    fun downloadFile(key: String): ByteArray {
+        // S3에서 파일 다운로드
+        return s3Client.download(key)
+    }
 
     @Transactional
     fun updateStatus(id: Long, status: UploadStatus) {
@@ -41,23 +51,26 @@ class FileService(
         fileRepository.save(updated)
     }
 
-    fun validateFileType(mimeType: String): Boolean {
+    // TODO: 파일 타입 검증
+    private fun validateFileType(mimeType: String): Boolean {
         val allowed = setOf(
-            "image/jpeg", "image/png", "image/gif",
-            "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "text/plain", "application/zip",
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/plain",
+            "application/zip",
         )
         return mimeType in allowed
     }
 
-    fun validateFileSize(size: Long): Boolean {
+    // TODO: 파일 크기 제한을 설정
+    private fun validateFileSize(size: Long): Boolean {
         val maxSize = 50 * 1024 * 1024 // 50MB
         return size <= maxSize
-    }
-
-    fun downloadFile(key: String): ByteArray {
-        // S3에서 파일 다운로드
-        return s3Client.download(key)
     }
 }

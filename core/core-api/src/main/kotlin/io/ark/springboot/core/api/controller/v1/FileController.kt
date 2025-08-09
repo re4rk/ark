@@ -24,12 +24,6 @@ class FileController(
         @RequestParam("file") file: MultipartFile,
     ): ApiResponse<FileUploadResponse> {
         // 파일 타입/크기 검증
-        if (!fileService.validateFileType(file.contentType ?: "")) {
-            throw IllegalArgumentException("지원하지 않는 파일 형식입니다")
-        }
-        if (!fileService.validateFileSize(file.size)) {
-            throw IllegalArgumentException("파일 크기가 제한을 초과했습니다")
-        }
         // S3 업로드 및 메타데이터 저장
         val entity = fileService.uploadFile(
             bytes = file.bytes,
