@@ -1,11 +1,11 @@
 package io.ark.springboot.core.api.controller.v1
 
-import io.ark.springboot.client.s3.S3Client
-import io.ark.springboot.client.s3.StorageUploadResult
+import io.ark.springboot.core.domain.file.FileService
+import io.ark.springboot.storage.db.core.FileEntity
+import io.ark.springboot.storage.db.core.UploadStatus
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
-import io.ark.springboot.test.api.dsl.BOOLEAN
 import io.ark.springboot.test.api.dsl.NULL
 import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.STRING
@@ -20,16 +20,17 @@ import org.springframework.restdocs.headers.HeaderDocumentation
 import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document
 import org.springframework.restdocs.request.RequestDocumentation
 import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
-import java.time.OffsetDateTime
 
 class FileControllerTest : RestDocsTest() {
-    private lateinit var s3Client: S3Client
+    private lateinit var fileService: FileService
     private lateinit var controller: FileController
 
     @BeforeEach
     fun setUp() {
-        s3Client = mockk()
-        controller = FileController(s3Client)
+        fileService = mockk()
+        every { fileService.validateFileType(any()) } returns true
+        every { fileService.validateFileSize(any()) } returns true
+        controller = FileController(fileService)
         mockMvc = mockController(controller)
     }
 
@@ -38,21 +39,20 @@ class FileControllerTest : RestDocsTest() {
         // given
         val fileContent = "hello world".toByteArray()
         val fileName = "test.txt"
-        val mockResult = StorageUploadResult(
-            key = "uploads/123456789-test.txt",
+        val fileEntity = FileEntity(
             originalName = fileName,
+            s3Key = "uploads/123456789-test.txt",
             size = fileContent.size.toLong(),
             mimeType = "text/plain",
-            uploadedAt = OffsetDateTime.now().toString(),
-            downloadPath = "/api/v1/files/uploads%2F123456789-test.txt/download",
+            status = UploadStatus.UPLOADED,
         )
         every {
-            s3Client.upload(
+            fileService.uploadFile(
                 bytes = any(),
-                originalFilename = fileName,
+                originalName = fileName,
                 contentType = "text/plain",
             )
-        } returns mockResult
+        } returns fileEntity
 
         // when & then
         given()
@@ -66,7 +66,6 @@ class FileControllerTest : RestDocsTest() {
                     println("Expected 200 but got: ${response.extract().statusCode()}")
                 }
                 println("Response body: ${response.extract().body().asString()}")
-
             }
             .status(HttpStatus.OK)
             .apply(
@@ -93,7 +92,7 @@ class FileControllerTest : RestDocsTest() {
         // given
         val key = "test.txt" // 단순한 파일명으로 변경
         val fileContent = "hello world".toByteArray()
-        every { s3Client.download(key) } returns fileContent
+        every { fileService.downloadFile(key) } returns fileContent
 
         // when & then
         given()
@@ -121,21 +120,20 @@ class FileControllerTest : RestDocsTest() {
     fun `파일명이 없는 파일 업로드`() {
         // given
         val fileContent = "hello world".toByteArray()
-        val mockResult = StorageUploadResult(
-            key = "uploads/123456789-unknown",
+        val fileEntity = FileEntity(
             originalName = "unknown",
+            s3Key = "uploads/123456789-unknown",
             size = fileContent.size.toLong(),
             mimeType = "text/plain",
-            uploadedAt = OffsetDateTime.now().toString(),
-            downloadPath = "/api/v1/files/uploads%2F123456789-unknown/download",
+            status = UploadStatus.UPLOADED,
         )
         every {
-            s3Client.upload(
+            fileService.uploadFile(
                 bytes = any(),
-                originalFilename = "",
+                originalName = "",
                 contentType = "text/plain",
             )
-        } returns mockResult
+        } returns fileEntity
 
         // when & then
         given()
@@ -170,21 +168,20 @@ class FileControllerTest : RestDocsTest() {
         // given
         val largeContent = ByteArray(1024 * 1024) { it.toByte() } // 1MB
         val fileName = "large-file.dat"
-        val mockResult = StorageUploadResult(
-            key = "uploads/123456789-large-file.dat",
+        val fileEntity = FileEntity(
             originalName = fileName,
+            s3Key = "uploads/123456789-large-file.dat",
             size = largeContent.size.toLong(),
             mimeType = "application/octet-stream",
-            uploadedAt = OffsetDateTime.now().toString(),
-            downloadPath = "/api/v1/files/uploads%2F123456789-large-file.dat/download",
+            status = UploadStatus.UPLOADED,
         )
         every {
-            s3Client.upload(
+            fileService.uploadFile(
                 bytes = any(),
-                originalFilename = fileName,
+                originalName = fileName,
                 contentType = "application/octet-stream",
             )
-        } returns mockResult
+        } returns fileEntity
 
         // when & then
         given()
