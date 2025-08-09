@@ -9,6 +9,7 @@ import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
 import io.ark.springboot.test.api.dsl.NULL
 import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.STRING
+import io.ark.springboot.test.api.dsl.BOOLEAN
 import io.ark.springboot.test.api.dsl.requestFields
 import io.ark.springboot.test.api.dsl.responseFields
 import io.ark.springboot.test.api.dsl.type

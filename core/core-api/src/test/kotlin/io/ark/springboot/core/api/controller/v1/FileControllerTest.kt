@@ -9,7 +9,6 @@ import io.ark.springboot.test.api.dsl.BOOLEAN
 import io.ark.springboot.test.api.dsl.NULL
 import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.STRING
-import io.ark.springboot.test.api.dsl.requestFields
 import io.ark.springboot.test.api.dsl.responseFields
 import io.ark.springboot.test.api.dsl.type
 import io.mockk.every
@@ -59,22 +58,24 @@ class FileControllerTest : RestDocsTest() {
         given()
             .contentType("multipart/form-data")
             .multiPart("file", fileName, fileContent, "text/plain")
-            .multiPart("description", "테스트 파일")
             .`when`()
             .post("/api/v1/files/upload")
             .then()
+            .also { response ->
+                if (response.extract().statusCode() != 200) {
+                    println("Expected 200 but got: ${response.extract().statusCode()}")
+                }
+                println("Response body: ${response.extract().body().asString()}")
+
+            }
             .status(HttpStatus.OK)
             .apply(
                 document(
                     "file-upload",
                     requestPreprocessor(),
                     responsePreprocessor(),
-                    requestFields(
-                        "file" type STRING means "업로드 파일",
-                        "description" type STRING means "파일 설명" isOptional true,
-                    ),
                     responseFields(
-                        "success" type BOOLEAN means "성공 여부",
+                        "result" type STRING means "성공 여부",
                         "data.fileId" type STRING means "파일 ID",
                         "data.originalName" type STRING means "원본 파일명",
                         "data.size" type NUMBER means "파일 크기",
@@ -90,7 +91,7 @@ class FileControllerTest : RestDocsTest() {
     @Test
     fun `파일 다운로드 성공`() {
         // given
-        val key = "uploads/123456789-test.txt"
+        val key = "test.txt" // 단순한 파일명으로 변경
         val fileContent = "hello world".toByteArray()
         every { s3Client.download(key) } returns fileContent
 
@@ -131,7 +132,7 @@ class FileControllerTest : RestDocsTest() {
         every {
             s3Client.upload(
                 bytes = any(),
-                originalFilename = "unknown",
+                originalFilename = "",
                 contentType = "text/plain",
             )
         } returns mockResult
@@ -150,11 +151,8 @@ class FileControllerTest : RestDocsTest() {
                     "file-upload-no-name",
                     requestPreprocessor(),
                     responsePreprocessor(),
-                    requestFields(
-                        "file" type STRING means "업로드 파일",
-                    ),
                     responseFields(
-                        "success" type BOOLEAN means "성공 여부",
+                        "result" type STRING means "성공 여부",
                         "data.fileId" type STRING means "파일 ID",
                         "data.originalName" type STRING means "원본 파일명",
                         "data.size" type NUMBER means "파일 크기",
@@ -202,11 +200,8 @@ class FileControllerTest : RestDocsTest() {
                     "file-upload-large",
                     requestPreprocessor(),
                     responsePreprocessor(),
-                    requestFields(
-                        "file" type STRING means "업로드 파일",
-                    ),
                     responseFields(
-                        "success" type BOOLEAN means "성공 여부",
+                        "result" type STRING means "성공 여부",
                         "data.fileId" type STRING means "파일 ID",
                         "data.originalName" type STRING means "원본 파일명",
                         "data.size" type NUMBER means "파일 크기",

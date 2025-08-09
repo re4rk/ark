@@ -22,7 +22,6 @@ class FileController(
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun upload(
         @RequestParam("file") file: MultipartFile,
-        @RequestParam("description", required = false) description: String?,
     ): ApiResponse<FileUploadResponse> {
         val result = s3Client.upload(
             bytes = file.bytes,
