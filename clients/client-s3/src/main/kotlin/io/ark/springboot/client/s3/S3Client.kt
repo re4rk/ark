@@ -1,7 +1,5 @@
 package io.ark.springboot.client.s3
 
-import org.springframework.stereotype.Component
-
 interface S3Client {
     fun upload(
         bytes: ByteArray,

@@ -83,7 +83,7 @@ class FileControllerTest : RestDocsTest() {
                         "data.url" type STRING means "다운로드 URL",
                         "error" type NULL isIgnored true,
                     ),
-                )
+                ),
             )
     }
 
@@ -107,12 +107,12 @@ class FileControllerTest : RestDocsTest() {
                     requestPreprocessor(),
                     responsePreprocessor(),
                     RequestDocumentation.pathParameters(
-                        parameterWithName("key").description("파일 키")
+                        parameterWithName("key").description("파일 키"),
                     ),
                     HeaderDocumentation.responseHeaders(
-                        HeaderDocumentation.headerWithName("Content-Disposition").description("첨부파일 헤더")
-                    )
-                )
+                        HeaderDocumentation.headerWithName("Content-Disposition").description("첨부파일 헤더"),
+                    ),
+                ),
             )
     }
 
@@ -163,7 +163,7 @@ class FileControllerTest : RestDocsTest() {
                         "data.url" type STRING means "다운로드 URL",
                         "error" type NULL isIgnored true,
                     ),
-                )
+                ),
             )
     }
 
@@ -215,7 +215,7 @@ class FileControllerTest : RestDocsTest() {
                         "data.url" type STRING means "다운로드 URL",
                         "error" type NULL isIgnored true,
                     ),
-                )
+                ),
             )
     }
 }
