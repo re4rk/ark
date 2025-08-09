@@ -6,6 +6,12 @@ import io.ark.springboot.core.domain.ExampleService
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
+import io.ark.springboot.test.api.dsl.NULL
+import io.ark.springboot.test.api.dsl.NUMBER
+import io.ark.springboot.test.api.dsl.STRING
+import io.ark.springboot.test.api.dsl.requestFields
+import io.ark.springboot.test.api.dsl.responseFields
+import io.ark.springboot.test.api.dsl.type
 import io.mockk.every
 import io.mockk.mockk
 import io.restassured.http.ContentType
@@ -13,13 +19,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document
-import org.springframework.restdocs.payload.JsonFieldType
-import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
-import org.springframework.restdocs.payload.PayloadDocumentation.requestFields
-import org.springframework.restdocs.payload.PayloadDocumentation.responseFields
 import org.springframework.restdocs.request.RequestDocumentation
 import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
-import org.springframework.restdocs.request.RequestDocumentation.queryParameters
 
 class ExampleControllerTest : RestDocsTest() {
     private lateinit var exampleService: ExampleService
@@ -50,10 +51,10 @@ class ExampleControllerTest : RestDocsTest() {
                         parameterWithName("exampleId").description("Example ID"),
                     ),
                     responseFields(
-                        fieldWithPath("result").type(JsonFieldType.STRING).description("ResultType"),
-                        fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("Example ID"),
-                        fieldWithPath("data.result").type(JsonFieldType.STRING).description("Result Data"),
-                        fieldWithPath("error").type(JsonFieldType.NULL).ignored(),
+                        "result" type STRING means "결과 타입",
+                        "data.id" type NUMBER means "예시 ID",
+                        "data.result" type STRING means "결과 데이터",
+                        "error" type NULL isIgnored true,
                     ),
                 ),
             )
@@ -75,13 +76,13 @@ class ExampleControllerTest : RestDocsTest() {
                     requestPreprocessor(),
                     responsePreprocessor(),
                     requestFields(
-                        fieldWithPath("data").type(JsonFieldType.STRING).description("ExampleBody Data Field"),
+                        "data" type STRING means "예시 데이터 필드",
                     ),
                     responseFields(
-                        fieldWithPath("result").type(JsonFieldType.STRING).description("ResultType"),
-                        fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("Example ID"),
-                        fieldWithPath("data.result").type(JsonFieldType.STRING).description("Result Data"),
-                        fieldWithPath("error").type(JsonFieldType.NULL).ignored(),
+                        "result" type STRING means "결과 타입",
+                        "data.id" type NUMBER means "예시 ID",
+                        "data.result" type STRING means "결과 데이터",
+                        "error" type NULL isIgnored true,
                     ),
                 ),
             )
