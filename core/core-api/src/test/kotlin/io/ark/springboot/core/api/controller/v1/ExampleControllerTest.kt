@@ -33,13 +33,12 @@ class ExampleControllerTest : RestDocsTest() {
     }
 
     @Test
-    fun exampleGet() {
-        every { exampleService.processExample(any()) } returns ExampleResult("BYE")
+    fun getExample() {
+        every { exampleService.getExample(any()) } returns ExampleResult(1, "BYE")
 
         given()
             .contentType(ContentType.JSON)
-            .queryParam("exampleParam", "HELLO_PARAM")
-            .get("/get/{exampleValue}", "HELLO_PATH")
+            .get("/examples/{exampleId}", 1)
             .then()
             .status(HttpStatus.OK)
             .apply(
@@ -48,14 +47,12 @@ class ExampleControllerTest : RestDocsTest() {
                     requestPreprocessor(),
                     responsePreprocessor(),
                     RequestDocumentation.pathParameters(
-                        parameterWithName("exampleValue").description("ExampleValue"),
-                    ),
-                    queryParameters(
-                        parameterWithName("exampleParam").description("ExampleParam"),
+                        parameterWithName("exampleId").description("Example ID"),
                     ),
                     responseFields(
                         fieldWithPath("result").type(JsonFieldType.STRING).description("ResultType"),
-                        fieldWithPath("data.result").type(JsonFieldType.STRING).description("Result Date"),
+                        fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("Example ID"),
+                        fieldWithPath("data.result").type(JsonFieldType.STRING).description("Result Data"),
                         fieldWithPath("error").type(JsonFieldType.NULL).ignored(),
                     ),
                 ),
@@ -63,13 +60,13 @@ class ExampleControllerTest : RestDocsTest() {
     }
 
     @Test
-    fun examplePost() {
-        every { exampleService.processExample(any()) } returns ExampleResult("BYE")
+    fun postExample() {
+        every { exampleService.createExample(any()) } returns ExampleResult(1, "BYE")
 
         given()
             .contentType(ContentType.JSON)
             .body(ExampleRequestDto("HELLO_BODY"))
-            .post("/post")
+            .post("/examples")
             .then()
             .status(HttpStatus.OK)
             .apply(
@@ -82,8 +79,9 @@ class ExampleControllerTest : RestDocsTest() {
                     ),
                     responseFields(
                         fieldWithPath("result").type(JsonFieldType.STRING).description("ResultType"),
-                        fieldWithPath("data.result").type(JsonFieldType.STRING).description("Result Date"),
-                        fieldWithPath("error").type(JsonFieldType.STRING).ignored(),
+                        fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("Example ID"),
+                        fieldWithPath("data.result").type(JsonFieldType.STRING).description("Result Data"),
+                        fieldWithPath("error").type(JsonFieldType.NULL).ignored(),
                     ),
                 ),
             )

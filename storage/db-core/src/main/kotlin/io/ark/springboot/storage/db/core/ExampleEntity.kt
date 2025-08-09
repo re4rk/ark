@@ -6,5 +6,5 @@ import jakarta.persistence.Entity
 @Entity
 class ExampleEntity(
     @Column
-    val exampleColumn: String,
+    var exampleColumn: String,
 ) : BaseEntity()
