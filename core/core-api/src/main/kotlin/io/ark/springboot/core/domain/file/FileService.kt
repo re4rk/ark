@@ -3,9 +3,9 @@ package io.ark.springboot.core.domain.file
 import io.ark.springboot.client.s3.S3Client
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
-import io.ark.springboot.storage.db.core.FileEntity
-import io.ark.springboot.storage.db.core.FileRepository
-import io.ark.springboot.storage.db.core.UploadStatus
+import io.ark.springboot.storage.db.core.file.FileEntity
+import io.ark.springboot.storage.db.core.file.FileRepository
+import io.ark.springboot.storage.db.core.file.UploadStatus
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

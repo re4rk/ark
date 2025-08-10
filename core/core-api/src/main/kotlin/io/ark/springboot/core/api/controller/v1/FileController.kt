@@ -3,7 +3,7 @@ package io.ark.springboot.core.api.controller.v1
 import io.ark.springboot.core.domain.file.FileDto
 import io.ark.springboot.core.domain.file.FileService
 import io.ark.springboot.core.support.response.ApiResponse
-import io.ark.springboot.storage.db.core.UploadStatus
+import io.ark.springboot.storage.db.core.file.UploadStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

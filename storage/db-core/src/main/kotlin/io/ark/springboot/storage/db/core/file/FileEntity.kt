@@ -1,5 +1,6 @@
-package io.ark.springboot.storage.db.core
+package io.ark.springboot.storage.db.core.file
 
+import io.ark.springboot.storage.db.core.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType

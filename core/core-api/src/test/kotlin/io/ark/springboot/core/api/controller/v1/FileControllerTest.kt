@@ -2,7 +2,7 @@ package io.ark.springboot.core.api.controller.v1
 
 import io.ark.springboot.core.domain.file.FileDto
 import io.ark.springboot.core.domain.file.FileService
-import io.ark.springboot.storage.db.core.UploadStatus
+import io.ark.springboot.storage.db.core.file.UploadStatus
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
