@@ -1,7 +1,7 @@
 package io.ark.springboot.storage.db.core
 
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
+import io.ark.springboot.storage.db.core.id.SnowflakeId
+import jakarta.persistence.Column
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
 import org.hibernate.annotations.CreationTimestamp
@@ -10,13 +10,14 @@ import java.time.LocalDateTime
 
 @MappedSuperclass
 abstract class BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0
+    @Id @SnowflakeId
+    var id: Long = 0
 
+    @Column(nullable = false, updatable = false, name = "created_at")
     @CreationTimestamp
     val createdAt: LocalDateTime = LocalDateTime.MIN
 
+    @Column(nullable = false, name = "updated_at")
     @UpdateTimestamp
     val updatedAt: LocalDateTime = LocalDateTime.MIN
 }
