@@ -4,6 +4,7 @@ import io.ark.springboot.core.api.controller.v1.response.FileDownloadUrlResponse
 import io.ark.springboot.core.api.controller.v1.response.FileResponse
 import io.ark.springboot.core.domain.file.FileService
 import io.ark.springboot.core.support.response.ApiResponse
+import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
@@ -21,13 +22,14 @@ class FileController(
 ) {
 
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun upload(
-        @RequestParam("file") file: MultipartFile,
-    ): ApiResponse<FileResponse> {
+    fun upload(@RequestParam("file") file: MultipartFile): ApiResponse<FileResponse> {
         val fileDto = fileService.uploadFile(
             bytes = file.bytes,
             originalName = file.originalFilename ?: "unknown",
             contentType = file.contentType ?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
+            // TODO: Validate category input
+            category = FileCategory.TEMP,
+            uploaderId = 0,
         )
         return ApiResponse.success(FileResponse.from(fileDto, null))
     }
@@ -49,4 +51,3 @@ class FileController(
         return ApiResponse.success(FileDownloadUrlResponse(url))
     }
 }
-

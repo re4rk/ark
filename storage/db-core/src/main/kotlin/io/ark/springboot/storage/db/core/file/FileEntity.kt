@@ -25,10 +25,24 @@ data class FileEntity(
     @Column(nullable = false, name = "status")
     @Enumerated(EnumType.STRING)
     val status: UploadStatus,
+
+    @Column(nullable = false, name = "category")
+    @Enumerated(EnumType.STRING)
+    val category: FileCategory,
+
+    @Column(nullable = false, name = "uploader_id")
+    val uploaderId: Long,
 ) : BaseEntity()
 
 enum class UploadStatus {
     PENDING,
     UPLOADED,
     FAILED,
+}
+
+enum class FileCategory {
+    PROFILE,
+    DOCUMENT,
+    IMAGE,
+    TEMP,
 }

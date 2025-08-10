@@ -3,6 +3,7 @@ package io.ark.springboot.core.domain.file
 import io.ark.springboot.client.s3.S3Client
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
+import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.FileEntity
 import io.ark.springboot.storage.db.core.file.FileRepository
 import io.ark.springboot.storage.db.core.file.UploadStatus
@@ -20,6 +21,8 @@ class FileService(
         bytes: ByteArray,
         originalName: String,
         contentType: String,
+        category: FileCategory,
+        uploaderId: Long,
     ): FileDto {
         if (!validateFileType(contentType)) {
             throw CoreException(ErrorType.FILE_UNSUPPORTED_TYPE)
@@ -28,16 +31,25 @@ class FileService(
             throw CoreException(ErrorType.FILE_SIZE_EXCEEDED)
         }
 
+        val key = s3Client.generateKey(uploaderId.toString(), category.name, originalName)
         val entity = FileEntity(
             originalName = originalName,
-            key = "",
+            key = key,
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.PENDING,
+            category = category,
+            uploaderId = uploaderId,
         )
         val savedEntity = fileRepository.save(entity)
 
-        processFileUpload(savedEntity.id, bytes, originalName, contentType)
+        processFileUpload(
+            fileId = savedEntity.id,
+            key = key,
+            bytes = bytes,
+            originalName = originalName,
+            contentType = contentType,
+        )
 
         return FileDto.from(savedEntity)
     }
@@ -84,21 +96,30 @@ class FileService(
     @Async
     fun processFileUpload(
         fileId: Long,
+        key: String,
         bytes: ByteArray,
         originalName: String,
         contentType: String?,
     ) {
         try {
-            val result = s3Client.upload(bytes, originalName, contentType)
+            s3Client.upload(
+                bytes = bytes,
+                key = key,
+                originalFilename = originalName,
+                contentType = contentType.toString(),
+            )
 
             val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
-            val updated = file.copy(key = result.key, status = UploadStatus.UPLOADED)
+            val updated = file.copy(status = UploadStatus.UPLOADED)
             fileRepository.save(updated)
         } catch (e: Exception) {
             val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
             val updated = file.copy(status = UploadStatus.FAILED)
             fileRepository.save(updated)
-
+            try {
+                s3Client.delete(file.key)
+            } catch (_: Exception) {
+            }
             throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)
         }
     }

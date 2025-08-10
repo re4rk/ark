@@ -1,5 +1,6 @@
 package io.ark.springboot.core.domain.file
 
+import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.FileEntity
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import java.time.LocalDateTime
@@ -13,6 +14,8 @@ data class FileDto(
     val status: UploadStatus,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
+    val category: FileCategory,
+    val uploaderId: Long,
 ) {
     companion object {
         fun from(entity: FileEntity) = FileDto(
@@ -24,6 +27,8 @@ data class FileDto(
             status = entity.status,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
+            category = entity.category,
+            uploaderId = entity.uploaderId,
         )
     }
 }
