@@ -5,7 +5,6 @@ import org.hibernate.annotations.IdGeneratorType
 import org.hibernate.engine.spi.SharedSessionContractImplementor
 import org.hibernate.id.IdentifierGenerator
 import java.io.Serializable
-import java.lang.System.console
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -19,7 +18,7 @@ import java.time.ZoneOffset
 annotation class SnowflakeId
 
 class SnowflakeIdGenerator : IdentifierGenerator {
-    
+
     private var workerId: Long = DEFAULT_WORKER_ID
 
     private var datacenterId: Long = DEFAULT_DATACENTER_ID
@@ -49,9 +48,9 @@ class SnowflakeIdGenerator : IdentifierGenerator {
         lastTimestamp = timestamp
 
         return ((timestamp - EPOCH) shl TIMESTAMP_LEFT_SHIFT.toInt()) or
-                (datacenterId shl DATACENTER_ID_SHIFT.toInt()) or
-                (workerId shl WORKER_ID_SHIFT.toInt()) or
-                sequence
+            (datacenterId shl DATACENTER_ID_SHIFT.toInt()) or
+            (workerId shl WORKER_ID_SHIFT.toInt()) or
+            sequence
     }
 
     private fun tilNextMillis(lastTimestamp: Long): Long {

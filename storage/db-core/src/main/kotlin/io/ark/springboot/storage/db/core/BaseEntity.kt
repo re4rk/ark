@@ -13,9 +13,11 @@ abstract class BaseEntity {
     @Id @SnowflakeId
     var id: Long = 0
 
-    @Column(nullable = false, updatable = false, name = "created_at") @CreationTimestamp
+    @Column(nullable = false, updatable = false, name = "created_at")
+    @CreationTimestamp
     val createdAt: LocalDateTime = LocalDateTime.MIN
 
-    @Column(nullable = false, name = "updated_at") @UpdateTimestamp
+    @Column(nullable = false, name = "updated_at")
+    @UpdateTimestamp
     val updatedAt: LocalDateTime = LocalDateTime.MIN
 }
