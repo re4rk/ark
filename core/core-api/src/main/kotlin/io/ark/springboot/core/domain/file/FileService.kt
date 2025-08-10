@@ -70,25 +70,12 @@ class FileService(
 
     // TODO: 파일 타입 검증
     private fun validateFileType(mimeType: String): Boolean {
-        val allowed = setOf(
-            "image/jpeg",
-            "image/png",
-            "image/gif",
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "text/plain",
-            "application/zip",
-        )
-        return mimeType in allowed
+        return mimeType in ALLOWED_FILE_TYPES
     }
 
     // TODO: 파일 크기 제한을 설정
     private fun validateFileSize(size: Long): Boolean {
-        val maxSize = 50 * 1024 * 1024 // 50MB
-        return size <= maxSize
+        return size <= MAX_FILE_SIZE
     }
 
     @Async
@@ -111,5 +98,21 @@ class FileService(
 
             throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)
         }
+    }
+
+    companion object {
+        const val MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+        val ALLOWED_FILE_TYPES = setOf(
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/plain",
+            "application/zip",
+        )
     }
 }
