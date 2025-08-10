@@ -1,5 +1,5 @@
 package io.ark.springboot.core.api.controller.v1.response
 
-data class FileDownloadUrlResponse(
+data class GetFileUrlResponse(
     val url: String,
 )

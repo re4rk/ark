@@ -42,6 +42,7 @@ class DefaultS3Client(
         contentType: String?,
     ): StorageUploadResult {
         require(bytes.isNotEmpty()) { "파일이 비어 있습니다" }
+        val sanitizedOriginal = sanitizeFilename(originalFilename)
         val putReq = PutObjectRequest.builder()
             .bucket(bucket)
             .key(key)
@@ -49,7 +50,7 @@ class DefaultS3Client(
             .contentLength(bytes.size.toLong())
             .metadata(
                 mapOf(
-                    "originalName" to originalFilename,
+                    "originalName" to sanitizedOriginal,
                     "contentType" to (contentType ?: "application/octet-stream"),
                     "size" to bytes.size.toString(),
                     "uploadedAt" to OffsetDateTime.now().toString(),
@@ -59,7 +60,7 @@ class DefaultS3Client(
         awsS3Client.putObject(putReq, RequestBody.fromBytes(bytes))
         return StorageUploadResult(
             key = key,
-            originalName = originalFilename,
+            originalName = sanitizedOriginal,
             size = bytes.size.toLong(),
             mimeType = contentType ?: "application/octet-stream",
             uploadedAt = OffsetDateTime.now().toString(),

@@ -1,37 +1,46 @@
 package io.ark.springboot.core.api.controller.v1
 
-import io.ark.springboot.core.api.controller.v1.response.FileDownloadUrlResponse
+import io.ark.springboot.core.api.controller.v1.request.UploadFileRequest
 import io.ark.springboot.core.api.controller.v1.response.FileResponse
+import io.ark.springboot.core.api.controller.v1.response.GetFileUrlResponse
 import io.ark.springboot.core.domain.file.FileService
 import io.ark.springboot.core.support.response.ApiResponse
 import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.UploadStatus
+import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/api/v1/files")
 class FileController(
     private val fileService: FileService,
 ) {
+    private val logger = LoggerFactory.getLogger(FileController::class.java)
 
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun upload(@RequestParam("file") file: MultipartFile): ApiResponse<FileResponse> {
+    fun upload(
+        @ModelAttribute uploadFileRequest: UploadFileRequest,
+    ): ApiResponse<FileResponse> {
         val fileDto = fileService.uploadFile(
-            bytes = file.bytes,
-            originalName = file.originalFilename ?: "unknown",
-            contentType = file.contentType ?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
-            // TODO: Validate category input
-            category = FileCategory.TEMP,
-            uploaderId = 0,
+            bytes = uploadFileRequest.file.bytes,
+            originalName = if (uploadFileRequest.file.originalFilename?.isBlank() == true) {
+                "unknown"
+            } else {
+                uploadFileRequest.file.originalFilename ?: "unknown"
+            },
+            contentType = uploadFileRequest.file.contentType ?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
+            category = FileCategory.valueOf(uploadFileRequest.category.uppercase()),
+            uploaderId = uploadFileRequest.uploaderId,
         )
-        return ApiResponse.success(FileResponse.from(fileDto, null))
+        val response = ApiResponse.success(FileResponse.from(fileDto, null))
+        logger.info("File upload response: {}", response)
+        return response
     }
 
     @GetMapping("/{fileId}/status")
@@ -46,8 +55,8 @@ class FileController(
     }
 
     @GetMapping("/{fileId}/url")
-    fun getDownloadUrl(@PathVariable("fileId") fileId: Long): ApiResponse<FileDownloadUrlResponse> {
+    fun getDownloadUrl(@PathVariable("fileId") fileId: Long): ApiResponse<GetFileUrlResponse> {
         val url = fileService.getDownloadUrl(fileId)
-        return ApiResponse.success(FileDownloadUrlResponse(url))
+        return ApiResponse.success(GetFileUrlResponse(url))
     }
 }

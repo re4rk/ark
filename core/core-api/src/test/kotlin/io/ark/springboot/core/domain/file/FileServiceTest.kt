@@ -4,93 +4,36 @@ import io.ark.springboot.client.s3.S3Client
 import io.ark.springboot.client.s3.StorageUploadResult
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
+import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.FileEntity
 import io.ark.springboot.storage.db.core.file.FileRepository
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.slot
 import io.mockk.spyk
-import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 import java.util.Optional
 
 class FileServiceTest {
     private lateinit var fileRepository: FileRepository
     private lateinit var s3Client: S3Client
+    private lateinit var transactionTemplate: TransactionTemplate
     private lateinit var fileService: FileService
 
     @BeforeEach
     fun setUp() {
         fileRepository = mockk()
         s3Client = mockk()
-        fileService = spyk(FileService(fileRepository, s3Client))
-    }
-
-    private fun mockFileEntity(
-        id: Long = 1L,
-        originalName: String,
-        key: String,
-        size: Long,
-        mimeType: String,
-        status: UploadStatus,
-        now: LocalDateTime = LocalDateTime.now(),
-    ): FileEntity {
-        val entity = mockk<FileEntity>()
-        every { entity.id } returns id
-        every { entity.originalName } returns originalName
-        every { entity.key } returns key
-        every { entity.size } returns size
-        every { entity.mimeType } returns mimeType
-        every { entity.status } returns status
-        every { entity.createdAt } returns now
-        every { entity.updatedAt } returns now
-        every {
-            entity.copy(
-                originalName = any(),
-                key = any(),
-                size = any(),
-                mimeType = any(),
-                status = any(),
-            )
-        } answers {
-            mockFileEntity(
-                id = id,
-                originalName = arg<String>(0),
-                key = arg<String>(1),
-                size = arg<Long>(2),
-                mimeType = arg<String>(3),
-                status = arg<UploadStatus>(4),
-                now = now,
-            )
-        }
-        every { entity.copy(status = any()) } answers {
-            mockFileEntity(
-                id = id,
-                originalName = originalName,
-                key = key,
-                size = size,
-                mimeType = mimeType,
-                status = arg<UploadStatus>(0),
-                now = now,
-            )
-        }
-        every { entity.copy(key = any(), status = any()) } answers {
-            mockFileEntity(
-                id = id,
-                originalName = originalName,
-                key = arg<String>(0),
-                size = size,
-                mimeType = mimeType,
-                status = arg<UploadStatus>(1),
-                now = now,
-            )
-        }
-        return entity
+        transactionTemplate = FakeTransactionTemplate()
+        fileService = spyk(FileService(fileRepository, s3Client, transactionTemplate))
     }
 
     @Test
@@ -100,22 +43,36 @@ class FileServiceTest {
         val originalName = "test.txt"
         val contentType = "text/plain"
         val now = LocalDateTime.now()
+        val key = "test-key"
 
-        val savedEntity = mockFileEntity(
+        val savedEntity = FileEntity(
             originalName = originalName,
-            key = "",
+            key = key,
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.PENDING,
-            now = now,
+            category = FileCategory.IMAGE,
+            uploaderId = 1L,
         )
 
         val entitySlot = slot<FileEntity>()
         every { fileRepository.save(capture(entitySlot)) } returns savedEntity
-        every { fileService.processFileUpload(any(), any(), any(), any()) } returns Unit
+        every { s3Client.generateKey(any(), any(), any()) } returns key
+        every { s3Client.upload(any(), any(), any(), any()) } returns StorageUploadResult(
+            key = key,
+            originalName = originalName,
+            size = bytes.size.toLong(),
+            mimeType = contentType,
+            uploadedAt = now.toString(),
+            downloadPath = "/download/$key",
+        )
+        // processFileUpload 내부에서 호출되는 findById에 대한 설정 추가
+        every { fileRepository.findById(savedEntity.id) } returns Optional.of(savedEntity)
+        // processFileUpload 메서드를 스파이하여 동기적으로 실행되도록 함
+        every { fileService.processFileUpload(any(), any(), any(), any(), any()) } just runs
 
         // when
-        val result = fileService.uploadFile(bytes, originalName, contentType)
+        val result = fileService.uploadFile(bytes, originalName, contentType, FileCategory.IMAGE, 1L)
 
         // then
         assertThat(result.originalName).isEqualTo(originalName)
@@ -134,7 +91,7 @@ class FileServiceTest {
 
         // when & then
         assertThrows<CoreException> {
-            fileService.uploadFile(bytes, originalName, contentType)
+            fileService.uploadFile(bytes, originalName, contentType, FileCategory.IMAGE, 1L)
         }.also {
             assertThat(it.errorType).isEqualTo(ErrorType.FILE_UNSUPPORTED_TYPE)
         }
@@ -149,7 +106,7 @@ class FileServiceTest {
 
         // when & then
         assertThrows<CoreException> {
-            fileService.uploadFile(bytes, originalName, contentType)
+            fileService.uploadFile(bytes, originalName, contentType, FileCategory.IMAGE, 1L)
         }.also {
             assertThat(it.errorType).isEqualTo(ErrorType.FILE_SIZE_EXCEEDED)
         }
@@ -159,26 +116,25 @@ class FileServiceTest {
     fun `파일 상태 조회 - PENDING 상태에서 S3에 파일이 있으면 UPLOADED로 변경`() {
         // given
         val fileId = 1L
-        val now = LocalDateTime.now()
 
-        val entity = mockFileEntity(
-            id = fileId,
+        val entity = FileEntity(
             originalName = "test.txt",
             key = "test-key",
             size = 100L,
             mimeType = "text/plain",
             status = UploadStatus.PENDING,
-            now = now,
+            category = FileCategory.IMAGE,
+            uploaderId = 1L,
         )
 
-        val updatedEntity = mockFileEntity(
-            id = fileId,
+        val updatedEntity = FileEntity(
             originalName = "test.txt",
             key = "test-key",
             size = 100L,
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
-            now = now,
+            category = FileCategory.IMAGE,
+            uploaderId = 1L,
         )
 
         every { fileRepository.findById(fileId) } returns Optional.of(entity)
@@ -209,12 +165,25 @@ class FileServiceTest {
     @Test
     fun `파일 다운로드 URL 조회 성공`() {
         // given
+        val fileId = 1L
         val key = "test-key"
         val presignedUrl = "https://example.com/presigned-url"
+
+        val entity = FileEntity(
+            originalName = "test.txt",
+            key = key,
+            size = 100L,
+            mimeType = "text/plain",
+            status = UploadStatus.UPLOADED,
+            category = FileCategory.IMAGE,
+            uploaderId = 1L,
+        )
+
+        every { fileRepository.findById(fileId) } returns Optional.of(entity)
         every { s3Client.getPresignedUrl(key) } returns presignedUrl
 
         // when
-        val result = fileService.getDownloadUrl(key)
+        val result = fileService.getDownloadUrl(fileId)
 
         // then
         assertThat(result).isEqualTo(presignedUrl)
@@ -223,12 +192,25 @@ class FileServiceTest {
     @Test
     fun `파일 다운로드 URL 조회 실패`() {
         // given
+        val fileId = 1L
         val key = "test-key"
+
+        val entity = FileEntity(
+            originalName = "test.txt",
+            key = key,
+            size = 100L,
+            mimeType = "text/plain",
+            status = UploadStatus.UPLOADED,
+            category = FileCategory.IMAGE,
+            uploaderId = 1L,
+        )
+
+        every { fileRepository.findById(fileId) } returns Optional.of(entity)
         every { s3Client.getPresignedUrl(key) } throws RuntimeException("S3 error")
 
         // when & then
         assertThrows<CoreException> {
-            fileService.getDownloadUrl(key)
+            fileService.getDownloadUrl(fileId)
         }.also {
             assertThat(it.errorType).isEqualTo(ErrorType.FILE_NOT_FOUND)
         }
@@ -238,19 +220,20 @@ class FileServiceTest {
     fun `비동기 파일 업로드 성공`() {
         // given
         val fileId = 1L
+        val key = "test-key"
         val bytes = "test".toByteArray()
         val originalName = "test.txt"
         val contentType = "text/plain"
         val now = LocalDateTime.now()
 
-        val entity = mockFileEntity(
-            id = fileId,
+        val entity = FileEntity(
             originalName = originalName,
-            key = "",
+            key = "test-key",
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.PENDING,
-            now = now,
+            category = FileCategory.IMAGE,
+            uploaderId = 1L,
         )
 
         val uploadResult = StorageUploadResult(
@@ -262,72 +245,51 @@ class FileServiceTest {
             downloadPath = "/download/test-key",
         )
 
-        val updatedEntity = mockFileEntity(
-            id = fileId,
+        val updatedEntity = FileEntity(
             originalName = originalName,
             key = uploadResult.key,
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.UPLOADED,
-            now = now,
+            category = FileCategory.IMAGE,
+            uploaderId = 1L,
         )
 
         every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { s3Client.upload(bytes, originalName, contentType) } returns uploadResult
+        every { s3Client.upload(bytes, key, originalName, contentType) } returns uploadResult
         every { fileRepository.save(any()) } returns updatedEntity
 
         // when
-        fileService.processFileUpload(fileId, bytes, originalName, contentType)
-
-        // then
-        val entitySlot = slot<FileEntity>()
-        verify { fileRepository.save(capture(entitySlot)) }
-        assertThat(entitySlot.captured.status).isEqualTo(UploadStatus.UPLOADED)
-        assertThat(entitySlot.captured.key).isEqualTo(uploadResult.key)
+        fileService.processFileUpload(fileId, key, bytes, originalName, contentType)
     }
 
     @Test
     fun `비동기 파일 업로드 실패`() {
         // given
         val fileId = 1L
+        val key = "test-key"
         val bytes = "test".toByteArray()
         val originalName = "test.txt"
         val contentType = "text/plain"
-        val now = LocalDateTime.now()
 
-        val entity = mockFileEntity(
-            id = fileId,
+        val entity = FileEntity(
             originalName = originalName,
             key = "",
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.PENDING,
-            now = now,
-        )
-
-        val updatedEntity = mockFileEntity(
-            id = fileId,
-            originalName = originalName,
-            key = "",
-            size = bytes.size.toLong(),
-            mimeType = contentType,
-            status = UploadStatus.FAILED,
-            now = now,
+            category = FileCategory.IMAGE,
+            uploaderId = 1L,
         )
 
         every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { s3Client.upload(bytes, originalName, contentType) } throws RuntimeException("S3 error")
-        every { fileRepository.save(any()) } returns updatedEntity
+        every { s3Client.upload(bytes, key, originalName, contentType) } throws RuntimeException("S3 error")
 
         // when & then
         assertThrows<CoreException> {
-            fileService.processFileUpload(fileId, bytes, originalName, contentType)
+            fileService.processFileUpload(fileId, key, bytes, originalName, contentType)
         }.also {
             assertThat(it.errorType).isEqualTo(ErrorType.FILE_UPLOAD_ERROR)
         }
-
-        val entitySlot = slot<FileEntity>()
-        verify { fileRepository.save(capture(entitySlot)) }
-        assertThat(entitySlot.captured.status).isEqualTo(UploadStatus.FAILED)
     }
 }

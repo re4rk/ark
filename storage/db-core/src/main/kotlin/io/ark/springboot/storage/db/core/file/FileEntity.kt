@@ -24,7 +24,7 @@ data class FileEntity(
 
     @Column(nullable = false, name = "status")
     @Enumerated(EnumType.STRING)
-    val status: UploadStatus,
+    var status: UploadStatus,
 
     @Column(nullable = false, name = "category")
     @Enumerated(EnumType.STRING)

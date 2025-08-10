@@ -10,11 +10,13 @@ import io.ark.springboot.storage.db.core.file.UploadStatus
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 
 @Service
 class FileService(
     private val fileRepository: FileRepository,
     private val s3Client: S3Client,
+    private val transactionTemplate: TransactionTemplate,
 ) {
     @Transactional
     fun uploadFile(
@@ -109,16 +111,14 @@ class FileService(
                 contentType = contentType.toString(),
             )
 
-            val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
-            val updated = file.copy(status = UploadStatus.UPLOADED)
-            fileRepository.save(updated)
+            transactionTemplate.execute {
+                val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+                file.status = UploadStatus.UPLOADED
+            }
         } catch (e: Exception) {
-            val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
-            val updated = file.copy(status = UploadStatus.FAILED)
-            fileRepository.save(updated)
-            try {
-                s3Client.delete(file.key)
-            } catch (_: Exception) {
+            transactionTemplate.execute {
+                val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+                file.status = UploadStatus.FAILED
             }
             throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)
         }
