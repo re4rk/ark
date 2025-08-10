@@ -1,7 +1,7 @@
 package io.ark.springboot.core.api.controller.v1
 
+import io.ark.springboot.core.domain.file.FileDto
 import io.ark.springboot.core.domain.file.FileService
-import io.ark.springboot.storage.db.core.FileEntity
 import io.ark.springboot.storage.db.core.UploadStatus
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
@@ -16,10 +16,10 @@ import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
-import org.springframework.restdocs.headers.HeaderDocumentation
 import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document
 import org.springframework.restdocs.request.RequestDocumentation
 import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
+import java.time.LocalDateTime
 
 class FileControllerTest : RestDocsTest() {
     private lateinit var fileService: FileService
@@ -37,12 +37,16 @@ class FileControllerTest : RestDocsTest() {
         // given
         val fileContent = "hello world".toByteArray()
         val fileName = "test.txt"
-        val fileEntity = FileEntity(
+        val now = LocalDateTime.now()
+        val fileDto = FileDto(
+            id = 1L,
             originalName = fileName,
             s3Key = "uploads/123456789-test.txt",
             size = fileContent.size.toLong(),
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
+            createdAt = now,
+            updatedAt = now,
         )
         every {
             fileService.uploadFile(
@@ -50,7 +54,7 @@ class FileControllerTest : RestDocsTest() {
                 originalName = fileName,
                 contentType = "text/plain",
             )
-        } returns fileEntity
+        } returns fileDto
 
         // when & then
         given()
@@ -59,12 +63,6 @@ class FileControllerTest : RestDocsTest() {
             .`when`()
             .post("/api/v1/files/upload")
             .then()
-            .also { response ->
-                if (response.extract().statusCode() != 200) {
-                    println("Expected 200 but got: ${response.extract().statusCode()}")
-                }
-                println("Response body: ${response.extract().body().asString()}")
-            }
             .status(HttpStatus.OK)
             .apply(
                 document(
@@ -77,8 +75,10 @@ class FileControllerTest : RestDocsTest() {
                         "data.originalName" type STRING means "원본 파일명",
                         "data.size" type NUMBER means "파일 크기",
                         "data.mimeType" type STRING means "MIME 타입",
-                        "data.uploadedAt" type STRING means "업로드 시각",
-                        "data.url" type STRING means "다운로드 URL",
+                        "data.status" type STRING means "업로드 상태",
+                        "data.createdAt" type STRING means "생성 시각",
+                        "data.updatedAt" type STRING means "수정 시각",
+                        "data.url" type NULL means "다운로드 URL",
                         "error" type NULL isIgnored true,
                     ),
                 ),
@@ -86,29 +86,30 @@ class FileControllerTest : RestDocsTest() {
     }
 
     @Test
-    fun `파일 다운로드 성공`() {
+    fun `파일 다운로드 URL 조회 성공`() {
         // given
-        val key = "test.txt" // 단순한 파일명으로 변경
-        val fileContent = "hello world".toByteArray()
-        every { fileService.downloadFile(key) } returns fileContent
+        val key = "test.txt"
+        val presignedUrl = "https://example.com/presigned-url"
+        every { fileService.getDownloadUrl(key) } returns presignedUrl
 
         // when & then
         given()
             .`when`()
-            .get("/api/v1/files/{key}/download", key)
+            .get("/api/v1/files/{key}/download-url", key)
             .then()
             .status(HttpStatus.OK)
-            .header("Content-Disposition", "attachment; filename=\"$key\"")
             .apply(
                 document(
-                    "file-download",
+                    "file-download-url",
                     requestPreprocessor(),
                     responsePreprocessor(),
                     RequestDocumentation.pathParameters(
                         parameterWithName("key").description("파일 키"),
                     ),
-                    HeaderDocumentation.responseHeaders(
-                        HeaderDocumentation.headerWithName("Content-Disposition").description("첨부파일 헤더"),
+                    responseFields(
+                        "result" type STRING means "성공 여부",
+                        "data.url" type STRING means "미리 서명된 다운로드 URL",
+                        "error" type NULL isIgnored true,
                     ),
                 ),
             )
@@ -118,20 +119,24 @@ class FileControllerTest : RestDocsTest() {
     fun `파일명이 없는 파일 업로드`() {
         // given
         val fileContent = "hello world".toByteArray()
-        val fileEntity = FileEntity(
+        val now = LocalDateTime.now()
+        val fileDto = FileDto(
+            id = 1L,
             originalName = "unknown",
             s3Key = "uploads/123456789-unknown",
             size = fileContent.size.toLong(),
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
+            createdAt = now,
+            updatedAt = now,
         )
         every {
             fileService.uploadFile(
                 bytes = any(),
-                originalName = "",
-                contentType = "text/plain",
+                originalName = any(),
+                contentType = any(),
             )
-        } returns fileEntity
+        } returns fileDto
 
         // when & then
         given()
@@ -153,8 +158,10 @@ class FileControllerTest : RestDocsTest() {
                         "data.originalName" type STRING means "원본 파일명",
                         "data.size" type NUMBER means "파일 크기",
                         "data.mimeType" type STRING means "MIME 타입",
-                        "data.uploadedAt" type STRING means "업로드 시각",
-                        "data.url" type STRING means "다운로드 URL",
+                        "data.status" type STRING means "업로드 상태",
+                        "data.createdAt" type STRING means "생성 시각",
+                        "data.updatedAt" type STRING means "수정 시각",
+                        "data.url" type NULL means "다운로드 URL",
                         "error" type NULL isIgnored true,
                     ),
                 ),
@@ -166,12 +173,16 @@ class FileControllerTest : RestDocsTest() {
         // given
         val largeContent = ByteArray(1024 * 1024) { it.toByte() } // 1MB
         val fileName = "large-file.dat"
-        val fileEntity = FileEntity(
+        val now = LocalDateTime.now()
+        val fileDto = FileDto(
+            id = 1L,
             originalName = fileName,
             s3Key = "uploads/123456789-large-file.dat",
             size = largeContent.size.toLong(),
             mimeType = "application/octet-stream",
             status = UploadStatus.UPLOADED,
+            createdAt = now,
+            updatedAt = now,
         )
         every {
             fileService.uploadFile(
@@ -179,7 +190,7 @@ class FileControllerTest : RestDocsTest() {
                 originalName = fileName,
                 contentType = "application/octet-stream",
             )
-        } returns fileEntity
+        } returns fileDto
 
         // when & then
         given()
@@ -201,7 +212,58 @@ class FileControllerTest : RestDocsTest() {
                         "data.originalName" type STRING means "원본 파일명",
                         "data.size" type NUMBER means "파일 크기",
                         "data.mimeType" type STRING means "MIME 타입",
-                        "data.uploadedAt" type STRING means "업로드 시각",
+                        "data.status" type STRING means "업로드 상태",
+                        "data.createdAt" type STRING means "생성 시각",
+                        "data.updatedAt" type STRING means "수정 시각",
+                        "data.url" type NULL means "다운로드 URL",
+                        "error" type NULL isIgnored true,
+                    ),
+                ),
+            )
+    }
+
+    @Test
+    fun `파일 상태 조회 성공`() {
+        // given
+        val fileId = "1"
+        val now = LocalDateTime.now()
+        val fileDto = FileDto(
+            id = 1L,
+            originalName = "test.txt",
+            s3Key = "uploads/123456789-test.txt",
+            size = 100L,
+            mimeType = "text/plain",
+            status = UploadStatus.UPLOADED,
+            createdAt = now,
+            updatedAt = now,
+        )
+        val presignedUrl = "https://example.com/presigned-url"
+        every { fileService.getFileStatus(1L) } returns fileDto
+        every { fileService.getDownloadUrl(fileDto.s3Key) } returns presignedUrl
+
+        // when & then
+        given()
+            .`when`()
+            .get("/api/v1/files/{fileId}/status", fileId)
+            .then()
+            .status(HttpStatus.OK)
+            .apply(
+                document(
+                    "file-status",
+                    requestPreprocessor(),
+                    responsePreprocessor(),
+                    RequestDocumentation.pathParameters(
+                        parameterWithName("fileId").description("파일 ID"),
+                    ),
+                    responseFields(
+                        "result" type STRING means "성공 여부",
+                        "data.fileId" type STRING means "파일 ID",
+                        "data.originalName" type STRING means "원본 파일명",
+                        "data.size" type NUMBER means "파일 크기",
+                        "data.mimeType" type STRING means "MIME 타입",
+                        "data.status" type STRING means "업로드 상태",
+                        "data.createdAt" type STRING means "생성 시각",
+                        "data.updatedAt" type STRING means "수정 시각",
                         "data.url" type STRING means "다운로드 URL",
                         "error" type NULL isIgnored true,
                     ),

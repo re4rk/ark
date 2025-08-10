@@ -1,10 +1,10 @@
 package io.ark.springboot.core.api.controller.v1
 
+import io.ark.springboot.core.domain.file.FileDto
 import io.ark.springboot.core.domain.file.FileService
 import io.ark.springboot.core.support.response.ApiResponse
-import org.springframework.http.HttpHeaders
+import io.ark.springboot.storage.db.core.UploadStatus
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -22,42 +22,57 @@ class FileController(
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun upload(
         @RequestParam("file") file: MultipartFile,
-    ): ApiResponse<FileUploadResponse> {
-        // 파일 타입/크기 검증
-        // S3 업로드 및 메타데이터 저장
-        val entity = fileService.uploadFile(
+    ): ApiResponse<FileResponse> {
+        val fileDto = fileService.uploadFile(
             bytes = file.bytes,
             originalName = file.originalFilename ?: "unknown",
-            contentType = file.contentType,
+            contentType = file.contentType ?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
         )
-        return ApiResponse.success(
-            FileUploadResponse(
-                originalName = entity.originalName,
-                size = entity.size,
-                mimeType = entity.mimeType,
-                uploadedAt = entity.createdAt.toString(),
-                url = "/api/v1/files/${entity.id}/download",
-                fileId = entity.id.toString(),
-            ),
-        )
+        return ApiResponse.success(FileResponse.from(fileDto, null))
     }
 
-    @GetMapping("/{key}/download")
-    fun download(@PathVariable("key") key: String): ResponseEntity<ByteArray> {
-        val obj = fileService.downloadFile(key)
-        return ResponseEntity
-            .ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$key\"")
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .body(obj)
+    @GetMapping("/{fileId}/status")
+    fun getStatus(@PathVariable("fileId") fileId: String): ApiResponse<FileResponse> {
+        val fileDto = fileService.getFileStatus(fileId.toLong())
+        val url = if (fileDto.status == UploadStatus.UPLOADED) {
+            fileService.getDownloadUrl(fileDto.s3Key)
+        } else {
+            null
+        }
+        return ApiResponse.success(FileResponse.from(fileDto, url))
+    }
+
+    @GetMapping("/{key}/download-url")
+    fun getDownloadUrl(@PathVariable("key") key: String): ApiResponse<FileDownloadUrlResponse> {
+        val url = fileService.getDownloadUrl(key)
+        return ApiResponse.success(FileDownloadUrlResponse(url))
     }
 }
 
-data class FileUploadResponse(
+data class FileResponse(
     val fileId: String,
     val originalName: String,
     val size: Long,
     val mimeType: String,
-    val uploadedAt: String,
+    val status: UploadStatus,
+    val createdAt: String,
+    val updatedAt: String,
+    val url: String?,
+) {
+    companion object {
+        fun from(dto: FileDto, url: String?) = FileResponse(
+            fileId = dto.id.toString(),
+            originalName = dto.originalName,
+            size = dto.size,
+            mimeType = dto.mimeType,
+            status = dto.status,
+            createdAt = dto.createdAt.toString(),
+            updatedAt = dto.updatedAt.toString(),
+            url = url,
+        )
+    }
+}
+
+data class FileDownloadUrlResponse(
     val url: String,
 )

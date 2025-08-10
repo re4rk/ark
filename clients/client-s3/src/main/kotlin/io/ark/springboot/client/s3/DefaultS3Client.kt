@@ -4,16 +4,22 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.time.OffsetDateTime
 import software.amazon.awssdk.services.s3.S3Client as AwsS3Client
 
 class DefaultS3Client(
     private val awsS3Client: AwsS3Client,
+    private val s3Presigner: S3Presigner,
     private val bucket: String,
 ) : S3Client {
 
@@ -58,14 +64,18 @@ class DefaultS3Client(
         )
     }
 
-    override fun download(key: String): ByteArray {
-        val req = GetObjectRequest.builder()
+    override fun getPresignedUrl(key: String, expirationMinutes: Long): String {
+        val getObjectRequest = GetObjectRequest.builder()
             .bucket(bucket)
             .key(key)
             .build()
-        awsS3Client.getObjectAsBytes(req).also {
-            return it.asByteArray()
-        }
+
+        val presignRequest = GetObjectPresignRequest.builder()
+            .signatureDuration(Duration.ofMinutes(expirationMinutes))
+            .getObjectRequest(getObjectRequest)
+            .build()
+
+        return s3Presigner.presignGetObject(presignRequest).url().toString()
     }
 
     private fun ensureBucket() {
@@ -91,4 +101,20 @@ class DefaultS3Client(
     }
 
     private fun urlEncode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
+
+    override fun exists(key: String): Boolean {
+        val request = HeadObjectRequest.builder()
+            .bucket(bucket)
+            .key(key)
+            .build()
+
+        return try {
+            awsS3Client.headObject(request)
+            true
+        } catch (e: NoSuchKeyException) {
+            false
+        } catch (e: S3Exception) {
+            if (e.statusCode() == 404) false else throw e
+        }
+    }
 }

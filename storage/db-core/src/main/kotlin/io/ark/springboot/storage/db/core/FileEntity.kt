@@ -27,7 +27,7 @@ data class FileEntity(
 ) : BaseEntity()
 
 enum class UploadStatus {
-    INIT,
+    PENDING,
     UPLOADED,
     FAILED,
 }

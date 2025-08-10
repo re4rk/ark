@@ -1,7 +1,5 @@
 package io.ark.springboot.client.s3
 
-import io.ark.springboot.client.s3.DefaultS3Client
-import io.ark.springboot.client.s3.S3Client
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -9,31 +7,37 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import software.amazon.awssdk.core.ResponseBytes
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Exception
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest
+import java.net.URL
+import java.time.Duration
 import software.amazon.awssdk.services.s3.S3Client as AwsS3Client
 
 class S3ClientTest {
 
     private lateinit var awsS3Client: AwsS3Client
+    private lateinit var s3Presigner: S3Presigner
     private lateinit var s3Client: S3Client
     private val testBucket = "test-bucket"
 
     @BeforeEach
     fun setUp() {
         awsS3Client = mockk()
+        s3Presigner = mockk()
 
         // 버킷 존재 확인 모킹
         every { awsS3Client.headBucket(any<HeadBucketRequest>()) } returns mockk()
 
-        s3Client = DefaultS3Client(awsS3Client, testBucket)
+        s3Client = DefaultS3Client(awsS3Client, s3Presigner, testBucket)
     }
 
     @Test
@@ -139,24 +143,46 @@ class S3ClientTest {
     }
 
     @Test
-    fun `파일 다운로드 성공 테스트`() {
+    fun `미리 서명된 URL 생성 테스트`() {
         // given
         val key = "uploads/123456789-test.txt"
-        val fileContent = "hello world".toByteArray()
-        val responseBytes = mockk<ResponseBytes<GetObjectResponse>>()
+        val presignedUrl = "https://example.com/presigned-url"
+        val mockPresignedRequest = mockk<PresignedGetObjectRequest>()
 
-        every { responseBytes.asByteArray() } returns fileContent
-        every { awsS3Client.getObjectAsBytes(any<GetObjectRequest>()) } returns responseBytes
+        every { mockPresignedRequest.url() } returns URL(presignedUrl)
+        every { s3Presigner.presignGetObject(any<GetObjectPresignRequest>()) } returns mockPresignedRequest
 
         // when
-        val result = s3Client.download(key)
+        val result = s3Client.getPresignedUrl(key)
 
         // then
-        assertThat(result).isEqualTo(fileContent)
+        assertThat(result).isEqualTo(presignedUrl)
 
         verify {
-            awsS3Client.getObjectAsBytes(
-                match<GetObjectRequest> { req ->
+            s3Presigner.presignGetObject(
+                match<GetObjectPresignRequest> { req ->
+                    req.getObjectRequest().bucket() == testBucket &&
+                        req.getObjectRequest().key() == key &&
+                        req.signatureDuration() == Duration.ofMinutes(5)
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `파일 존재 여부 확인 테스트 - 존재하는 경우`() {
+        // given
+        val key = "uploads/123456789-test.txt"
+        every { awsS3Client.headObject(any<HeadObjectRequest>()) } returns mockk()
+
+        // when
+        val result = s3Client.exists(key)
+
+        // then
+        assertThat(result).isTrue()
+        verify {
+            awsS3Client.headObject(
+                match<HeadObjectRequest> { req ->
                     req.bucket() == testBucket && req.key() == key
                 },
             )
@@ -164,14 +190,45 @@ class S3ClientTest {
     }
 
     @Test
+    fun `파일 존재 여부 확인 테스트 - 존재하지 않는 경우`() {
+        // given
+        val key = "uploads/123456789-test.txt"
+        every { awsS3Client.headObject(any<HeadObjectRequest>()) } throws NoSuchKeyException.builder().build()
+
+        // when
+        val result = s3Client.exists(key)
+
+        // then
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `파일 존재 여부 확인 테스트 - 404 에러`() {
+        // given
+        val key = "uploads/123456789-test.txt"
+        val s3Exception = S3Exception.builder()
+            .statusCode(404)
+            .message("Not found")
+            .build()
+        every { awsS3Client.headObject(any<HeadObjectRequest>()) } throws s3Exception
+
+        // when
+        val result = s3Client.exists(key)
+
+        // then
+        assertThat(result).isFalse()
+    }
+
+    @Test
     fun `버킷이 없을 때 생성 테스트`() {
         // given
         val awsS3ClientForBucketTest = mockk<AwsS3Client>()
+        val s3PresignerForBucketTest = mockk<S3Presigner>()
         every { awsS3ClientForBucketTest.headBucket(any<HeadBucketRequest>()) } throws NoSuchBucketException.builder().build()
         every { awsS3ClientForBucketTest.createBucket(any<CreateBucketRequest>()) } returns mockk()
 
         // when
-        DefaultS3Client(awsS3ClientForBucketTest, testBucket)
+        DefaultS3Client(awsS3ClientForBucketTest, s3PresignerForBucketTest, testBucket)
 
         // then
         verify {
@@ -187,6 +244,7 @@ class S3ClientTest {
     fun `S3Exception 404 에러 시 버킷 생성 테스트`() {
         // given
         val awsS3ClientForBucketTest = mockk<AwsS3Client>()
+        val s3PresignerForBucketTest = mockk<S3Presigner>()
         val s3Exception = S3Exception.builder()
             .statusCode(404)
             .message("Bucket not found")
@@ -196,7 +254,7 @@ class S3ClientTest {
         every { awsS3ClientForBucketTest.createBucket(any<CreateBucketRequest>()) } returns mockk()
 
         // when
-        DefaultS3Client(awsS3ClientForBucketTest, testBucket)
+        DefaultS3Client(awsS3ClientForBucketTest, s3PresignerForBucketTest, testBucket)
 
         // then
         verify {

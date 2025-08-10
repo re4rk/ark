@@ -9,6 +9,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Configuration
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import java.net.URI
 import software.amazon.awssdk.services.s3.S3Client as AwsS3Client
 
@@ -37,7 +38,25 @@ class S3Config {
     }
 
     @Bean
-    fun s3Client(awsS3Client: AwsS3Client, props: S3Properties): S3Client = DefaultS3Client(awsS3Client, props.bucket)
+    fun s3Presigner(props: S3Properties): S3Presigner {
+        return S3Presigner.builder()
+            .region(Region.of(props.region))
+            .credentialsProvider(
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(props.accessKey, props.secretKey),
+                ),
+            )
+            .serviceConfiguration(
+                S3Configuration.builder()
+                    .pathStyleAccessEnabled(true)
+                    .build(),
+            )
+            .endpointOverride(URI.create(props.endpoint))
+            .build()
+    }
+
+    @Bean
+    fun s3Client(awsS3Client: AwsS3Client, s3Presigner: S3Presigner, props: S3Properties): S3Client = DefaultS3Client(awsS3Client, s3Presigner, props.bucket)
 }
 
 @ConfigurationProperties(prefix = "storage.s3")

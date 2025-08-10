@@ -7,7 +7,9 @@ interface S3Client {
         contentType: String? = null,
     ): StorageUploadResult
 
-    fun download(key: String): ByteArray
+    fun getPresignedUrl(key: String, expirationMinutes: Long = 5): String
+
+    fun exists(key: String): Boolean
 }
 
 data class StorageUploadResult(
