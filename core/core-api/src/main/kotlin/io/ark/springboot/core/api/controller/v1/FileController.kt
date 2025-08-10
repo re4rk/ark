@@ -35,7 +35,7 @@ class FileController(
     fun getStatus(@PathVariable("fileId") fileId: String): ApiResponse<FileResponse> {
         val fileDto = fileService.getFileStatus(fileId.toLong())
         val url = if (fileDto.status == UploadStatus.UPLOADED) {
-            fileService.getDownloadUrl(fileDto.s3Key)
+            fileService.getDownloadUrl(fileDto.key)
         } else {
             null
         }

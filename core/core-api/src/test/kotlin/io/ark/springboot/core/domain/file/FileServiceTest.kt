@@ -34,7 +34,7 @@ class FileServiceTest {
     private fun mockFileEntity(
         id: Long = 1L,
         originalName: String,
-        s3Key: String,
+        key: String,
         size: Long,
         mimeType: String,
         status: UploadStatus,
@@ -43,7 +43,7 @@ class FileServiceTest {
         val entity = mockk<FileEntity>()
         every { entity.id } returns id
         every { entity.originalName } returns originalName
-        every { entity.s3Key } returns s3Key
+        every { entity.key } returns key
         every { entity.size } returns size
         every { entity.mimeType } returns mimeType
         every { entity.status } returns status
@@ -52,7 +52,7 @@ class FileServiceTest {
         every {
             entity.copy(
                 originalName = any(),
-                s3Key = any(),
+                key = any(),
                 size = any(),
                 mimeType = any(),
                 status = any(),
@@ -61,7 +61,7 @@ class FileServiceTest {
             mockFileEntity(
                 id = id,
                 originalName = arg<String>(0),
-                s3Key = arg<String>(1),
+                key = arg<String>(1),
                 size = arg<Long>(2),
                 mimeType = arg<String>(3),
                 status = arg<UploadStatus>(4),
@@ -72,18 +72,18 @@ class FileServiceTest {
             mockFileEntity(
                 id = id,
                 originalName = originalName,
-                s3Key = s3Key,
+                key = key,
                 size = size,
                 mimeType = mimeType,
                 status = arg<UploadStatus>(0),
                 now = now,
             )
         }
-        every { entity.copy(s3Key = any(), status = any()) } answers {
+        every { entity.copy(key = any(), status = any()) } answers {
             mockFileEntity(
                 id = id,
                 originalName = originalName,
-                s3Key = arg<String>(0),
+                key = arg<String>(0),
                 size = size,
                 mimeType = mimeType,
                 status = arg<UploadStatus>(1),
@@ -103,7 +103,7 @@ class FileServiceTest {
 
         val savedEntity = mockFileEntity(
             originalName = originalName,
-            s3Key = "",
+            key = "",
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.PENDING,
@@ -164,7 +164,7 @@ class FileServiceTest {
         val entity = mockFileEntity(
             id = fileId,
             originalName = "test.txt",
-            s3Key = "test-key",
+            key = "test-key",
             size = 100L,
             mimeType = "text/plain",
             status = UploadStatus.PENDING,
@@ -174,7 +174,7 @@ class FileServiceTest {
         val updatedEntity = mockFileEntity(
             id = fileId,
             originalName = "test.txt",
-            s3Key = "test-key",
+            key = "test-key",
             size = 100L,
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
@@ -246,7 +246,7 @@ class FileServiceTest {
         val entity = mockFileEntity(
             id = fileId,
             originalName = originalName,
-            s3Key = "",
+            key = "",
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.PENDING,
@@ -265,7 +265,7 @@ class FileServiceTest {
         val updatedEntity = mockFileEntity(
             id = fileId,
             originalName = originalName,
-            s3Key = uploadResult.key,
+            key = uploadResult.key,
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.UPLOADED,
@@ -283,7 +283,7 @@ class FileServiceTest {
         val entitySlot = slot<FileEntity>()
         verify { fileRepository.save(capture(entitySlot)) }
         assertThat(entitySlot.captured.status).isEqualTo(UploadStatus.UPLOADED)
-        assertThat(entitySlot.captured.s3Key).isEqualTo(uploadResult.key)
+        assertThat(entitySlot.captured.key).isEqualTo(uploadResult.key)
     }
 
     @Test
@@ -298,7 +298,7 @@ class FileServiceTest {
         val entity = mockFileEntity(
             id = fileId,
             originalName = originalName,
-            s3Key = "",
+            key = "",
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.PENDING,
@@ -308,7 +308,7 @@ class FileServiceTest {
         val updatedEntity = mockFileEntity(
             id = fileId,
             originalName = originalName,
-            s3Key = "",
+            key = "",
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.FAILED,

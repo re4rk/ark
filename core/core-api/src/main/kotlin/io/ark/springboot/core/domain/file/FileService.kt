@@ -28,17 +28,15 @@ class FileService(
             throw CoreException(ErrorType.FILE_SIZE_EXCEEDED)
         }
 
-        // 메타데이터를 PENDING 상태로 먼저 저장
         val entity = FileEntity(
             originalName = originalName,
-            s3Key = "", // S3 업로드 후 업데이트됨
+            key = "",
             size = bytes.size.toLong(),
             mimeType = contentType,
             status = UploadStatus.PENDING,
         )
         val savedEntity = fileRepository.save(entity)
 
-        // 비동기로 S3 업로드 실행
         processFileUpload(savedEntity.id, bytes, originalName, contentType)
 
         return FileDto.from(savedEntity)
@@ -49,7 +47,7 @@ class FileService(
         val entity = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
         if (entity.status == UploadStatus.PENDING) {
-            if (s3Client.exists(entity.s3Key)) {
+            if (s3Client.exists(entity.key)) {
                 val updated = entity.copy(status = UploadStatus.UPLOADED)
                 return FileDto.from(fileRepository.save(updated))
             }
@@ -89,7 +87,7 @@ class FileService(
             val result = s3Client.upload(bytes, originalName, contentType)
 
             val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
-            val updated = file.copy(s3Key = result.key, status = UploadStatus.UPLOADED)
+            val updated = file.copy(key = result.key, status = UploadStatus.UPLOADED)
             fileRepository.save(updated)
         } catch (e: Exception) {
             val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }

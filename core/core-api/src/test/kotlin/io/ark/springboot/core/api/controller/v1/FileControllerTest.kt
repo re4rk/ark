@@ -41,7 +41,7 @@ class FileControllerTest : RestDocsTest() {
         val fileDto = FileDto(
             id = 1L,
             originalName = fileName,
-            s3Key = "uploads/123456789-test.txt",
+            key = "uploads/123456789-test.txt",
             size = fileContent.size.toLong(),
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
@@ -123,7 +123,7 @@ class FileControllerTest : RestDocsTest() {
         val fileDto = FileDto(
             id = 1L,
             originalName = "unknown",
-            s3Key = "uploads/123456789-unknown",
+            key = "uploads/123456789-unknown",
             size = fileContent.size.toLong(),
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
@@ -177,7 +177,7 @@ class FileControllerTest : RestDocsTest() {
         val fileDto = FileDto(
             id = 1L,
             originalName = fileName,
-            s3Key = "uploads/123456789-large-file.dat",
+            key = "uploads/123456789-large-file.dat",
             size = largeContent.size.toLong(),
             mimeType = "application/octet-stream",
             status = UploadStatus.UPLOADED,
@@ -230,7 +230,7 @@ class FileControllerTest : RestDocsTest() {
         val fileDto = FileDto(
             id = 1L,
             originalName = "test.txt",
-            s3Key = "uploads/123456789-test.txt",
+            key = "uploads/123456789-test.txt",
             size = 100L,
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
@@ -239,7 +239,7 @@ class FileControllerTest : RestDocsTest() {
         )
         val presignedUrl = "https://example.com/presigned-url"
         every { fileService.getFileStatus(1L) } returns fileDto
-        every { fileService.getDownloadUrl(fileDto.s3Key) } returns presignedUrl
+        every { fileService.getDownloadUrl(fileDto.key) } returns presignedUrl
 
         // when & then
         given()

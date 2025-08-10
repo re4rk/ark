@@ -13,8 +13,8 @@ data class FileEntity(
     @Column(nullable = false, name = "original_name")
     val originalName: String,
 
-    @Column(nullable = false, name = "s3_key")
-    val s3Key: String,
+    @Column(nullable = false, name = "key")
+    val key: String,
 
     @Column(nullable = false, name = "size")
     val size: Long,

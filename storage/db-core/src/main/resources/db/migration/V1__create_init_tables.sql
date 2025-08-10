@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS files (
     `id`                    BIGINT          NOT NULL AUTO_INCREMENT,
 
     `original_name`         VARCHAR(255)    NOT NULL COMMENT '원본 파일 이름',
-    `s3_key`                VARCHAR(255)    NOT NULL COMMENT 'S3에 저장된 파일의 키',
+    `key`                VARCHAR(255)    NOT NULL COMMENT '저장된 파일의 키',
     `size`                  BIGINT          NOT NULL COMMENT '파일 크기 (바이트 단위)',
     `mime_type`             VARCHAR(255)    NOT NULL COMMENT '파일의 MIME 타입',
     `status`                VARCHAR(32)     NOT NULL COMMENT '파일 상태 (예: UPLOADED, PROCESSING, COMPLETED, FAILED)',

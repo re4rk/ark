@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 data class FileDto(
     val id: Long,
     val originalName: String,
-    val s3Key: String,
+    val key: String,
     val size: Long,
     val mimeType: String,
     val status: UploadStatus,
@@ -18,7 +18,7 @@ data class FileDto(
         fun from(entity: FileEntity) = FileDto(
             id = entity.id,
             originalName = entity.originalName,
-            s3Key = entity.s3Key,
+            key = entity.key,
             size = entity.size,
             mimeType = entity.mimeType,
             status = entity.status,
