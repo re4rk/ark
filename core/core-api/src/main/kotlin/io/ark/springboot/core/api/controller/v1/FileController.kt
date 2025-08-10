@@ -33,19 +33,19 @@ class FileController(
     }
 
     @GetMapping("/{fileId}/status")
-    fun getStatus(@PathVariable("fileId") fileId: String): ApiResponse<FileResponse> {
-        val fileDto = fileService.getFileStatus(fileId.toLong())
+    fun getStatus(@PathVariable("fileId") fileId: Long): ApiResponse<FileResponse> {
+        val fileDto = fileService.getFileStatus(fileId)
         val url = if (fileDto.status == UploadStatus.UPLOADED) {
-            fileService.getDownloadUrl(fileDto.key)
+            fileService.getDownloadUrl(fileId)
         } else {
             null
         }
         return ApiResponse.success(FileResponse.from(fileDto, url))
     }
 
-    @GetMapping("/{key}/url")
-    fun getDownloadUrl(@PathVariable("key") key: String): ApiResponse<FileDownloadUrlResponse> {
-        val url = fileService.getDownloadUrl(key)
+    @GetMapping("/{fileId}/url")
+    fun getDownloadUrl(@PathVariable("fileId") fileId: Long): ApiResponse<FileDownloadUrlResponse> {
+        val url = fileService.getDownloadUrl(fileId)
         return ApiResponse.success(FileDownloadUrlResponse(url))
     }
 }

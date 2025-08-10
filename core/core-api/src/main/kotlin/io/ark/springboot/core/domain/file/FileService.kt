@@ -57,10 +57,15 @@ class FileService(
     }
 
     @Transactional(readOnly = true)
-    fun getDownloadUrl(key: String): String {
+    fun getDownloadUrl(fileId: Long): String {
         try {
-            // S3에서 미리 서명된 URL 생성
-            return s3Client.getPresignedUrl(key)
+            val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+
+            if (file.status != UploadStatus.UPLOADED) {
+                throw CoreException(ErrorType.FILE_NOT_FOUND)
+            }
+
+            return s3Client.getPresignedUrl(file.key)
         } catch (e: Exception) {
             throw CoreException(ErrorType.FILE_NOT_FOUND, cause = e)
         }
