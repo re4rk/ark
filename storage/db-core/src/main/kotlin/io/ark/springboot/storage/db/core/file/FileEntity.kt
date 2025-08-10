@@ -13,7 +13,7 @@ data class FileEntity(
     @Column(nullable = false, name = "original_name")
     val originalName: String,
 
-    @Column(nullable = false, name = "key")
+    @Column(nullable = false, name = "file_key")
     val key: String,
 
     @Column(nullable = false, name = "size")
