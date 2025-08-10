@@ -22,12 +22,10 @@ data class FileEntity(
     @Column(nullable = false, name = "mime_type")
     val mimeType: String,
 
-    @Column(nullable = false, name = "status")
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "status") @Enumerated(EnumType.STRING)
     var status: UploadStatus,
 
-    @Column(nullable = false, name = "category")
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "category") @Enumerated(EnumType.STRING)
     val category: FileCategory,
 
     @Column(nullable = false, name = "uploader_id")
