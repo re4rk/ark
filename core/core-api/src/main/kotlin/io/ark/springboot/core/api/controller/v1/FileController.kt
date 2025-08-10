@@ -42,7 +42,7 @@ class FileController(
         return ApiResponse.success(FileResponse.from(fileDto, url))
     }
 
-    @GetMapping("/{key}/download-url")
+    @GetMapping("/{key}/url")
     fun getDownloadUrl(@PathVariable("key") key: String): ApiResponse<FileDownloadUrlResponse> {
         val url = fileService.getDownloadUrl(key)
         return ApiResponse.success(FileDownloadUrlResponse(url))
@@ -50,24 +50,20 @@ class FileController(
 }
 
 data class FileResponse(
-    val fileId: String,
+    val id: Long,
     val originalName: String,
     val size: Long,
     val mimeType: String,
     val status: UploadStatus,
-    val createdAt: String,
-    val updatedAt: String,
     val url: String?,
 ) {
     companion object {
         fun from(dto: FileDto, url: String?) = FileResponse(
-            fileId = dto.id.toString(),
+            id = dto.id,
             originalName = dto.originalName,
             size = dto.size,
             mimeType = dto.mimeType,
             status = dto.status,
-            createdAt = dto.createdAt.toString(),
-            updatedAt = dto.updatedAt.toString(),
             url = url,
         )
     }
