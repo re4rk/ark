@@ -45,6 +45,14 @@ class FileService(
         return fileRepository.save(entity)
     }
 
+    @Transactional
+    fun updateStatus(id: Long, status: UploadStatus) {
+        val file = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+        val updated = file.copy(status = status)
+        fileRepository.save(updated)
+    }
+
+    @Transactional(readOnly = true)
     fun downloadFile(key: String): ByteArray {
         try {
             // S3에서 파일 다운로드
@@ -52,13 +60,6 @@ class FileService(
         } catch (e: Exception) {
             throw CoreException(ErrorType.FILE_NOT_FOUND, cause = e)
         }
-    }
-
-    @Transactional
-    fun updateStatus(id: Long, status: UploadStatus) {
-        val file = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
-        val updated = file.copy(status = status)
-        fileRepository.save(updated)
     }
 
     // TODO: 파일 타입 검증
