@@ -2,6 +2,8 @@ package io.ark.springboot.core.domain.file
 
 import io.ark.springboot.client.s3.S3Client
 import io.ark.springboot.client.s3.StorageUploadResult
+import io.ark.springboot.core.support.error.CoreException
+import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.FileEntity
 import io.ark.springboot.storage.db.core.FileRepository
 import io.ark.springboot.storage.db.core.UploadStatus
@@ -20,14 +22,18 @@ class FileService(
         contentType: String?,
     ): FileEntity {
         if (!validateFileType(contentType ?: "")) {
-            throw IllegalArgumentException("지원하지 않는 파일 형식입니다")
+            throw CoreException(ErrorType.FILE_UNSUPPORTED_TYPE)
         }
         if (!validateFileSize(bytes.size.toLong())) {
-            throw IllegalArgumentException("파일 크기가 제한을 초과했습니다")
+            throw CoreException(ErrorType.FILE_SIZE_EXCEEDED)
         }
 
         // S3 업로드
-        val result: StorageUploadResult = s3Client.upload(bytes, originalName, contentType)
+        val result: StorageUploadResult = try {
+            s3Client.upload(bytes, originalName, contentType)
+        } catch (e: Exception) {
+            throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)
+        }
         // 메타데이터 저장 (status=UPLOADED)
         val entity = FileEntity(
             originalName = result.originalName,
@@ -40,13 +46,17 @@ class FileService(
     }
 
     fun downloadFile(key: String): ByteArray {
-        // S3에서 파일 다운로드
-        return s3Client.download(key)
+        try {
+            // S3에서 파일 다운로드
+            return s3Client.download(key)
+        } catch (e: Exception) {
+            throw CoreException(ErrorType.FILE_NOT_FOUND, cause = e)
+        }
     }
 
     @Transactional
     fun updateStatus(id: Long, status: UploadStatus) {
-        val file = fileRepository.findById(id).orElseThrow { IllegalArgumentException("File not found") }
+        val file = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
         val updated = file.copy(status = status)
         fileRepository.save(updated)
     }
