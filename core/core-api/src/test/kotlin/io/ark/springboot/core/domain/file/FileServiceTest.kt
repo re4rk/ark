@@ -1,7 +1,7 @@
 package io.ark.springboot.core.domain.file
 
 import io.ark.springboot.core.domain.file.storage.FileStorage
-import io.ark.springboot.core.domain.file.validator.FileValidationService
+import io.ark.springboot.core.domain.file.validator.FileValidationDispatcher
 import io.ark.springboot.core.domain.file.validator.ValidationResult
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
@@ -29,7 +29,7 @@ class FileServiceTest {
     private lateinit var fileRepository: FileRepository
     private lateinit var fileStorage: FileStorage
     private lateinit var transactionTemplate: TransactionTemplate
-    private lateinit var fileValidationService: FileValidationService
+    private lateinit var fileValidationDispatcher: FileValidationDispatcher
     private lateinit var fileService: FileService
 
     @BeforeEach
@@ -37,8 +37,8 @@ class FileServiceTest {
         fileRepository = mockk()
         fileStorage = mockk()
         transactionTemplate = FakeTransactionTemplate()
-        fileValidationService = mockk()
-        fileService = spyk(FileService(fileRepository, fileStorage, transactionTemplate, fileValidationService))
+        fileValidationDispatcher = mockk()
+        fileService = spyk(FileService(fileRepository, fileStorage, transactionTemplate, fileValidationDispatcher))
     }
 
     @Test
@@ -67,7 +67,7 @@ class FileServiceTest {
         every { fileRepository.save(capture(entitySlot)) } returns savedEntity andThen updatedEntity
         every { fileStorage.generateKey(any(), any(), any()) } returns key
         coEvery { fileStorage.upload(any(), any(), any(), any()) } just runs
-        every { fileValidationService.validateFile(any()) } returns ValidationResult(true)
+        every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(true)
 
         // when
         val result = fileService.uploadFile(file, FileCategory.IMAGE, 1L)
@@ -91,7 +91,7 @@ class FileServiceTest {
             "test".toByteArray(),
         )
 
-        every { fileValidationService.validateFile(any()) } returns ValidationResult(false, "지원하지 않는 파일 타입입니다")
+        every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(false, "지원하지 않는 파일 타입입니다")
 
         // when & then
         assertThrows<CoreException> {
@@ -111,7 +111,7 @@ class FileServiceTest {
             ByteArray(51 * 1024 * 1024), // 51MB
         )
 
-        every { fileValidationService.validateFile(any()) } returns ValidationResult(false, "파일 크기가 제한을 초과했습니다")
+        every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(false, "파일 크기가 제한을 초과했습니다")
 
         // when & then
         assertThrows<CoreException> {

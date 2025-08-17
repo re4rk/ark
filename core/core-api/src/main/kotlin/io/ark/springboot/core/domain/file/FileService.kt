@@ -1,7 +1,7 @@
 package io.ark.springboot.core.domain.file
 
 import io.ark.springboot.core.domain.file.storage.FileStorage
-import io.ark.springboot.core.domain.file.validator.FileValidationService
+import io.ark.springboot.core.domain.file.validator.FileValidationDispatcher
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.file.FileCategory
@@ -21,7 +21,7 @@ class FileService(
     private val fileRepository: FileRepository,
     private val fileStorage: FileStorage,
     private val transactionTemplate: TransactionTemplate,
-    private val fileValidationService: FileValidationService,
+    private val fileValidationDispatcher: FileValidationDispatcher,
 ) {
     @Transactional
     suspend fun uploadFile(
@@ -29,7 +29,7 @@ class FileService(
         category: FileCategory,
         uploaderId: Long,
     ): FileDto {
-        if (!fileValidationService.validateFile(file).isValid) {
+        if (!fileValidationDispatcher.validateFile(file).isValid) {
             throw CoreException(ErrorType.FILE_UNSUPPORTED_TYPE)
         }
 

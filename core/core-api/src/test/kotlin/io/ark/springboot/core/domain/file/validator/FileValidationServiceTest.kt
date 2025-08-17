@@ -1,7 +1,5 @@
 package io.ark.springboot.core.domain.file.validator
 
-import io.ark.springboot.core.domain.file.validator.FileValidationService
-import io.ark.springboot.core.domain.file.validator.ImageFileValidator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -10,12 +8,12 @@ import org.springframework.mock.web.MockMultipartFile
 class FileValidationServiceTest {
 
     private lateinit var imageValidator: ImageFileValidator
-    private lateinit var fileValidationService: FileValidationService
+    private lateinit var fileValidationDispatcher: FileValidationDispatcher
 
     @BeforeEach
     fun setUp() {
         imageValidator = ImageFileValidator()
-        fileValidationService = FileValidationService(listOf(imageValidator))
+        fileValidationDispatcher = FileValidationDispatcher(listOf(imageValidator))
     }
 
     @Test
@@ -29,7 +27,7 @@ class FileValidationServiceTest {
         )
 
         // when
-        val result = fileValidationService.validateFile(file)
+        val result = fileValidationDispatcher.validateFile(file)
 
         // then
         assertThat(result.isValid).isTrue()
@@ -47,7 +45,7 @@ class FileValidationServiceTest {
         )
 
         // when
-        val result = fileValidationService.validateFile(file)
+        val result = fileValidationDispatcher.validateFile(file)
 
         // then
         assertThat(result.isValid).isFalse()
@@ -65,7 +63,7 @@ class FileValidationServiceTest {
         )
 
         // when
-        val result = fileValidationService.validateFile(file)
+        val result = fileValidationDispatcher.validateFile(file)
 
         // then
         assertThat(result.isValid).isFalse()
@@ -84,7 +82,7 @@ class FileValidationServiceTest {
         )
 
         // when
-        val result = fileValidationService.validateFile(file)
+        val result = fileValidationDispatcher.validateFile(file)
 
         // then
         assertThat(result.isValid).isFalse()
@@ -94,7 +92,7 @@ class FileValidationServiceTest {
     @Test
     fun `지원하는 MIME 타입 목록 조회`() {
         // when
-        val supportedTypes = fileValidationService.getSupportedMimeTypes()
+        val supportedTypes = fileValidationDispatcher.getSupportedMimeTypes()
 
         // then
         assertThat(supportedTypes).contains("image/*")
