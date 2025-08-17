@@ -89,28 +89,22 @@ class FileService(
     fun getDownloadUrl(fileId: Long): String {
         val entity = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
-        when (entity.status) {
-            UploadStatus.PENDING -> {
-                // PENDING 상태일 때 상태를 다시 확인
-                val updatedDto = getFileStatus(fileId)
-                if (updatedDto.status == UploadStatus.UPLOADED) {
-                    return try {
-                        fileStorage.getPresignedUrl(updatedDto.key)
-                    } catch (e: Exception) {
-                        throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
-                    }
-                } else {
-                    throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
-                }
+        return when (entity.status) {
+            UploadStatus.PENDING -> when (getFileStatus(fileId).status) {
+                UploadStatus.UPLOADED -> getPresignedUrl(entity.key)
+                else -> throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
             }
+
             UploadStatus.FAILED -> throw CoreException(ErrorType.FILE_UPLOAD_ERROR)
-            UploadStatus.UPLOADED -> {
-                return try {
-                    fileStorage.getPresignedUrl(entity.key)
-                } catch (e: Exception) {
-                    throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
-                }
-            }
+            UploadStatus.UPLOADED -> getPresignedUrl(entity.key)
+        }
+    }
+
+    private fun getPresignedUrl(key: String): String {
+        return try {
+            fileStorage.getPresignedUrl(key)
+        } catch (e: Exception) {
+            throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
         }
     }
 }
