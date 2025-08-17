@@ -1,0 +1,20 @@
+storage:
+  s3:
+    endpoint: http://localhost:9000
+    region: ap-northeast-2
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket: ark-local
+
+---
+spring.config.activate.on-profile: local-dev
+
+storage:
+  s3:
+    endpoint: http://localhost:9000
+    region: ap-northeast-2
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket: ark-local
+
+

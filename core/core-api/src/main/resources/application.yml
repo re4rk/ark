@@ -8,7 +8,12 @@ spring:
       - logging.yml
       - db-core.yml
       - client-example.yml
+      - s3.yml
   web.resources.add-mappings: false
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 
 server:
   tomcat:

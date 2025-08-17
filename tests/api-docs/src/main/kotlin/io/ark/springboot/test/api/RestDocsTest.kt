@@ -8,6 +8,7 @@ import io.restassured.module.mockmvc.specification.MockMvcRequestSpecification
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.http.converter.ByteArrayHttpMessageConverter
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.springframework.restdocs.RestDocumentationContextProvider
 import org.springframework.restdocs.RestDocumentationExtension
@@ -42,7 +43,7 @@ abstract class RestDocsTest {
 
         return MockMvcBuilders.standaloneSetup(controller)
             .apply<StandaloneMockMvcBuilder>(MockMvcRestDocumentation.documentationConfiguration(restDocumentation))
-            .setMessageConverters(converter)
+            .setMessageConverters(converter, ByteArrayHttpMessageConverter())
             .build()
     }
 
