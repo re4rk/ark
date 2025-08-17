@@ -221,7 +221,7 @@ class FileServiceTest {
         assertThrows<CoreException> {
             fileService.getDownloadUrl(fileId)
         }.also {
-            assertThat(it.errorType).isEqualTo(ErrorType.FILE_NOT_FOUND)
+            assertThat(it.errorType).isEqualTo(ErrorType.FILE_DOWNLOAD_ERROR)
         }
     }
 }
