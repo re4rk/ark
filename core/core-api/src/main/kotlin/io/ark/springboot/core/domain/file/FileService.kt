@@ -9,8 +9,9 @@ import io.ark.springboot.storage.db.core.file.FileEntity
 import io.ark.springboot.storage.db.core.file.FileRepository
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
@@ -22,6 +23,7 @@ class FileService(
     private val fileStorage: FileStorage,
     private val transactionTemplate: TransactionTemplate,
     private val fileValidationDispatcher: FileValidationDispatcher,
+    @Qualifier("applicationTaskExecutor") private val applicationScope: CoroutineScope,
 ) {
     @Transactional
     suspend fun uploadFile(
@@ -50,7 +52,7 @@ class FileService(
 
         val savedEntity = fileRepository.save(entity)
 
-        CoroutineScope(Dispatchers.IO).launch {
+        applicationScope.launch {
             try {
                 fileStorage.upload(
                     bytes = file.bytes,
@@ -60,14 +62,14 @@ class FileService(
                 )
 
                 transactionTemplate.execute {
-                    val pendedEntity = fileRepository.findById(savedEntity.id)
-                        .orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+                    val pendedEntity = fileRepository.findByIdOrNull(savedEntity.id)
+                        ?: throw CoreException(ErrorType.FILE_NOT_FOUND)
                     pendedEntity.status = UploadStatus.UPLOADED
                 }
             } catch (e: Exception) {
                 transactionTemplate.execute {
-                    val pendedEntity = fileRepository.findById(savedEntity.id)
-                        .orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+                    val pendedEntity = fileRepository.findByIdOrNull(savedEntity.id)
+                        ?: throw CoreException(ErrorType.FILE_NOT_FOUND)
                     pendedEntity.status = UploadStatus.FAILED
                 }
                 throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)

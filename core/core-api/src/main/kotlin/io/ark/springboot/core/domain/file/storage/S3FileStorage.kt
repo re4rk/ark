@@ -1,6 +1,8 @@
 package io.ark.springboot.core.domain.file.storage
 
 import io.ark.springboot.client.s3.S3Client
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 
 @Service
@@ -12,8 +14,14 @@ class S3FileStorage(
         return s3Client.generateKey(uploaderId, category, originalName)
     }
 
-    override suspend fun upload(bytes: ByteArray, key: String, originalFilename: String, contentType: String) {
+    override suspend fun upload(
+        bytes: ByteArray,
+        key: String,
+        originalFilename: String,
+        contentType: String,
+    ) = withContext(Dispatchers.IO) {
         s3Client.upload(bytes, key, originalFilename, contentType)
+        return@withContext
     }
 
     override fun exists(key: String): Boolean {

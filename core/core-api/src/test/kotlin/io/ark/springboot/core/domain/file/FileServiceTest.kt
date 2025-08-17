@@ -16,6 +16,8 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.spyk
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -30,6 +32,7 @@ class FileServiceTest {
     private lateinit var fileStorage: FileStorage
     private lateinit var transactionTemplate: TransactionTemplate
     private lateinit var fileValidationDispatcher: FileValidationDispatcher
+    private lateinit var applicationScope: CoroutineScope
     private lateinit var fileService: FileService
 
     @BeforeEach
@@ -38,7 +41,8 @@ class FileServiceTest {
         fileStorage = mockk()
         transactionTemplate = FakeTransactionTemplate()
         fileValidationDispatcher = mockk()
-        fileService = spyk(FileService(fileRepository, fileStorage, transactionTemplate, fileValidationDispatcher))
+        applicationScope = CoroutineScope(Dispatchers.Unconfined)
+        fileService = spyk(FileService(fileRepository, fileStorage, transactionTemplate, fileValidationDispatcher, applicationScope))
     }
 
     @Test
