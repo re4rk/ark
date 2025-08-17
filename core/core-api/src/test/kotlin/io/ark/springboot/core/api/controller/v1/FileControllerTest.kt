@@ -147,7 +147,7 @@ class FileControllerTest : RestDocsTest() {
         // when & then
         given()
             .contentType("multipart/form-data")
-            .multiPart("file", fileContent, "text/plain")
+            .multiPart("file", "unknown", fileContent, "text/plain")
             .param("category", FileCategory.IMAGE.name)
             .param("uploaderId", "1")
             .`when`()
