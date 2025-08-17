@@ -119,6 +119,10 @@ class DefaultS3Client(
 
     private fun sanitizeFilename(name: String?): String {
         val base = name?.substringAfterLast('/')?.substringAfterLast('\\') ?: "unknown"
-        return base.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        return base.replace(FILENAME_SANITIZE_REGEX, "_")
+    }
+
+    private companion object {
+        private val FILENAME_SANITIZE_REGEX = Regex("[^A-Za-z0-9._-]")
     }
 }
