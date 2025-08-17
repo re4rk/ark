@@ -12,7 +12,7 @@ enum class ErrorType(val status: HttpStatus, val code: ErrorCode, val message: S
     FILE_MISSING(HttpStatus.BAD_REQUEST, ErrorCode.FILE_MISSING, "업로드할 파일이 없습니다.", LogLevel.WARN),
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorCode.FILE_NOT_FOUND, "파일을 찾을 수 없습니다.", LogLevel.WARN),
     FILE_PENDING_UPLOAD(HttpStatus.BAD_REQUEST, ErrorCode.FILE_PENDING_UPLOAD, "파일이 아직 업로드되지 않았습니다.", LogLevel.WARN),
-    FILE_DOWNLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.FILE_NOT_FOUND, "파일 다운로드 중 오류가 발생했습니다.", LogLevel.ERROR),
+    FILE_DOWNLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.FILE_DOWNLOAD_ERROR, "파일 다운로드 중 오류가 발생했습니다.", LogLevel.ERROR),
     FILE_ACCESS_DENIED(HttpStatus.FORBIDDEN, ErrorCode.FILE_ACCESS_DENIED, "파일에 접근할 권한이 없습니다.", LogLevel.WARN),
     FILE_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.FILE_UPLOAD_ERROR, "파일 업로드 중 오류가 발생했습니다.", LogLevel.ERROR),
     FILE_TOO_MANY_UPLOADS(HttpStatus.BAD_REQUEST, ErrorCode.FILE_TOO_MANY_UPLOADS, "동시 업로드 파일 수가 제한을 초과했습니다.", LogLevel.WARN),

@@ -77,11 +77,9 @@ class FileService(
     fun getFileStatus(id: Long): FileDto {
         val entity = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
-        if (entity.status == UploadStatus.PENDING) {
-            if (fileStorage.exists(entity.key)) {
-                val updated = entity.copy(status = UploadStatus.UPLOADED)
-                return FileDto.from(fileRepository.save(updated))
-            }
+        if (entity.status == UploadStatus.PENDING && fileStorage.exists(entity.key)) {
+            val updatedEntity = entity.copy(status = UploadStatus.UPLOADED)
+            return FileDto.from(updatedEntity)
         }
 
         return FileDto.from(entity)
@@ -94,13 +92,13 @@ class FileService(
         when (entity.status) {
             UploadStatus.PENDING -> throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
             UploadStatus.FAILED -> throw CoreException(ErrorType.FILE_UPLOAD_ERROR)
-            else -> {}
-        }
-
-        return try {
-            fileStorage.getPresignedUrl(entity.key)
-        } catch (e: Exception) {
-            throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
+            UploadStatus.UPLOADED -> {
+                return try {
+                    fileStorage.getPresignedUrl(entity.key)
+                } catch (e: Exception) {
+                    throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
+                }
+            }
         }
     }
 }
