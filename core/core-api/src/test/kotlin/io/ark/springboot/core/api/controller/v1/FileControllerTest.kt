@@ -54,9 +54,7 @@ class FileControllerTest : RestDocsTest() {
         )
         coEvery {
             fileService.uploadFile(
-                bytes = fileContent,
-                originalName = fileName,
-                contentType = "text/plain",
+                file = any(),
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
             )
@@ -140,9 +138,7 @@ class FileControllerTest : RestDocsTest() {
         )
         coEvery {
             fileService.uploadFile(
-                bytes = fileContent,
-                originalName = "unknown",
-                contentType = "text/plain",
+                file = any(),
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
             )

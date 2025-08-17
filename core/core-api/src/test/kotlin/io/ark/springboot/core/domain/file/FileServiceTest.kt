@@ -1,6 +1,8 @@
 package io.ark.springboot.core.domain.file
 
 import io.ark.springboot.core.domain.file.storage.FileStorage
+import io.ark.springboot.core.domain.file.validator.FileValidationService
+import io.ark.springboot.core.domain.file.validator.ValidationResult
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.file.FileCategory
@@ -19,6 +21,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.transaction.support.TransactionTemplate
 import java.util.Optional
 
@@ -26,6 +29,7 @@ class FileServiceTest {
     private lateinit var fileRepository: FileRepository
     private lateinit var fileStorage: FileStorage
     private lateinit var transactionTemplate: TransactionTemplate
+    private lateinit var fileValidationService: FileValidationService
     private lateinit var fileService: FileService
 
     @BeforeEach
@@ -33,22 +37,26 @@ class FileServiceTest {
         fileRepository = mockk()
         fileStorage = mockk()
         transactionTemplate = FakeTransactionTemplate()
-        fileService = spyk(FileService(fileRepository, fileStorage, transactionTemplate))
+        fileValidationService = mockk()
+        fileService = spyk(FileService(fileRepository, fileStorage, transactionTemplate, fileValidationService))
     }
 
     @Test
     fun `파일 업로드 성공`() = runTest {
         // given
-        val bytes = "test".toByteArray()
-        val originalName = "test.txt"
-        val contentType = "text/plain"
+        val file = MockMultipartFile(
+            "file",
+            "test.txt",
+            "text/plain",
+            "test".toByteArray(),
+        )
         val key = "test-key"
 
         val savedEntity = FileEntity(
-            originalName = originalName,
+            originalName = file.originalFilename,
             key = key,
-            size = bytes.size.toLong(),
-            mimeType = contentType,
+            size = file.size,
+            mimeType = file.contentType ?: "application/octet-stream",
             status = UploadStatus.PENDING,
             category = FileCategory.IMAGE,
             uploaderId = 1L,
@@ -59,29 +67,35 @@ class FileServiceTest {
         every { fileRepository.save(capture(entitySlot)) } returns savedEntity andThen updatedEntity
         every { fileStorage.generateKey(any(), any(), any()) } returns key
         coEvery { fileStorage.upload(any(), any(), any(), any()) } just runs
+        every { fileValidationService.validateFile(any()) } returns ValidationResult(true)
 
         // when
-        val result = fileService.uploadFile(bytes, originalName, contentType, FileCategory.IMAGE, 1L)
+        val result = fileService.uploadFile(file, FileCategory.IMAGE, 1L)
 
         // then
-        assertThat(result.originalName).isEqualTo(originalName)
+        assertThat(result.originalName).isEqualTo(file.originalFilename)
         assertThat(result.status).isEqualTo(UploadStatus.PENDING)
-        assertThat(result.size).isEqualTo(bytes.size.toLong())
-        assertThat(entitySlot.captured.originalName).isEqualTo(originalName)
-        assertThat(entitySlot.captured.size).isEqualTo(bytes.size.toLong())
-        assertThat(entitySlot.captured.mimeType).isEqualTo(contentType)
+        assertThat(result.size).isEqualTo(file.size)
+        assertThat(entitySlot.captured.originalName).isEqualTo(file.originalFilename)
+        assertThat(entitySlot.captured.size).isEqualTo(file.size)
+        assertThat(entitySlot.captured.mimeType).isEqualTo(file.contentType)
     }
 
     @Test
     fun `지원하지 않는 파일 타입 업로드 시 예외 발생`() = runTest {
         // given
-        val bytes = "test".toByteArray()
-        val originalName = "test.exe"
-        val contentType = "application/x-msdownload"
+        val file = MockMultipartFile(
+            "file",
+            "test.exe",
+            "application/x-msdownload",
+            "test".toByteArray(),
+        )
+
+        every { fileValidationService.validateFile(any()) } returns ValidationResult(false, "지원하지 않는 파일 타입입니다")
 
         // when & then
         assertThrows<CoreException> {
-            fileService.uploadFile(bytes, originalName, contentType, FileCategory.IMAGE, 1L)
+            fileService.uploadFile(file, FileCategory.IMAGE, 1L)
         }.also {
             assertThat(it.errorType).isEqualTo(ErrorType.FILE_UNSUPPORTED_TYPE)
         }
@@ -90,15 +104,20 @@ class FileServiceTest {
     @Test
     fun `파일 크기 초과 시 예외 발생`() = runTest {
         // given
-        val bytes = ByteArray(51 * 1024 * 1024) // 51MB
-        val originalName = "large.txt"
-        val contentType = "text/plain"
+        val file = MockMultipartFile(
+            "file",
+            "large.txt",
+            "text/plain",
+            ByteArray(51 * 1024 * 1024), // 51MB
+        )
+
+        every { fileValidationService.validateFile(any()) } returns ValidationResult(false, "파일 크기가 제한을 초과했습니다")
 
         // when & then
         assertThrows<CoreException> {
-            fileService.uploadFile(bytes, originalName, contentType, FileCategory.IMAGE, 1L)
+            fileService.uploadFile(file, FileCategory.IMAGE, 1L)
         }.also {
-            assertThat(it.errorType).isEqualTo(ErrorType.FILE_SIZE_EXCEEDED)
+            assertThat(it.errorType).isEqualTo(ErrorType.FILE_UNSUPPORTED_TYPE)
         }
     }
 

@@ -1,6 +1,7 @@
 package io.ark.springboot.core.domain.file
 
 import io.ark.springboot.core.domain.file.storage.FileStorage
+import io.ark.springboot.core.domain.file.validator.FileValidationService
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.file.FileCategory
@@ -13,34 +14,31 @@ import kotlinx.coroutines.launch
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
+import org.springframework.web.multipart.MultipartFile
 
 @Service
 class FileService(
     private val fileRepository: FileRepository,
     private val fileStorage: FileStorage,
     private val transactionTemplate: TransactionTemplate,
+    private val fileValidationService: FileValidationService,
 ) {
     @Transactional
     suspend fun uploadFile(
-        bytes: ByteArray,
-        originalName: String,
-        contentType: String,
+        file: MultipartFile,
         category: FileCategory,
         uploaderId: Long,
     ): FileDto {
-        if (!validateFileType(contentType)) {
+        if (!fileValidationService.validateFile(file).isValid) {
             throw CoreException(ErrorType.FILE_UNSUPPORTED_TYPE)
         }
-        if (!validateFileSize(bytes.size.toLong())) {
-            throw CoreException(ErrorType.FILE_SIZE_EXCEEDED)
-        }
 
-        val key = fileStorage.generateKey(uploaderId.toString(), category.name, originalName)
+        val key = fileStorage.generateKey(uploaderId.toString(), category.name, file.originalFilename ?: "unknown")
         val entity = FileEntity(
-            originalName = originalName,
+            originalName = file.originalFilename ?: "unknown",
             key = key,
-            size = bytes.size.toLong(),
-            mimeType = contentType,
+            size = file.size,
+            mimeType = file.contentType ?: "application/octet-stream",
             status = UploadStatus.PENDING,
             category = category,
             uploaderId = uploaderId,
@@ -51,10 +49,10 @@ class FileService(
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 fileStorage.upload(
-                    bytes = bytes,
+                    bytes = file.bytes,
                     key = key,
-                    originalFilename = originalName,
-                    contentType = contentType,
+                    originalFilename = file.originalFilename ?: "unknown",
+                    contentType = file.contentType ?: "application/octet-stream",
                 )
 
                 transactionTemplate.execute {
@@ -102,31 +100,5 @@ class FileService(
         } catch (e: Exception) {
             throw CoreException(ErrorType.FILE_NOT_FOUND, cause = e)
         }
-    }
-
-    // TODO: 파일 타입 검증
-    private fun validateFileType(mimeType: String): Boolean {
-        return mimeType in ALLOWED_FILE_TYPES
-    }
-
-    // TODO: 파일 크기 제한을 설정
-    private fun validateFileSize(size: Long): Boolean {
-        return size <= MAX_FILE_SIZE
-    }
-
-    companion object {
-        const val MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
-        val ALLOWED_FILE_TYPES = setOf(
-            "image/jpeg",
-            "image/png",
-            "image/gif",
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "text/plain",
-            "application/zip",
-        )
     }
 }

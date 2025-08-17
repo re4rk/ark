@@ -5,7 +5,6 @@ import io.ark.springboot.core.api.controller.v1.response.FileResponse
 import io.ark.springboot.core.api.controller.v1.response.GetFileUrlResponse
 import io.ark.springboot.core.domain.file.FileService
 import io.ark.springboot.core.support.response.ApiResponse
-import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -29,19 +28,11 @@ class FileController(
         @ModelAttribute uploadFileRequest: UploadFileRequest,
     ): ApiResponse<FileResponse> = runBlocking {
         val fileDto = fileService.uploadFile(
-            bytes = uploadFileRequest.file.bytes,
-            originalName = if (uploadFileRequest.file.originalFilename?.isBlank() == true) {
-                "unknown"
-            } else {
-                uploadFileRequest.file.originalFilename ?: "unknown"
-            },
-            contentType = uploadFileRequest.file.contentType ?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
-            category = FileCategory.valueOf(uploadFileRequest.category.uppercase()),
+            file = uploadFileRequest.file,
+            category = uploadFileRequest.category,
             uploaderId = uploadFileRequest.uploaderId,
         )
-        val response = ApiResponse.success(FileResponse.from(fileDto, null))
-        logger.info("File upload response: {}", response)
-        return@runBlocking response
+        return@runBlocking ApiResponse.success(FileResponse.from(fileDto, null))
     }
 
     @GetMapping("/{fileId}/status")
