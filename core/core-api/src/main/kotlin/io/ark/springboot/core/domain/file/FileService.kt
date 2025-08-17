@@ -29,8 +29,12 @@ class FileService(
         category: FileCategory,
         uploaderId: Long,
     ): FileDto {
-        if (!fileValidationDispatcher.validateFile(file).isValid) {
-            throw CoreException(ErrorType.FILE_UNSUPPORTED_TYPE)
+        val validationResult = fileValidationDispatcher.validateFile(file)
+        if (!validationResult.isValid) {
+            throw CoreException(
+                ErrorType.FILE_UNSUPPORTED_TYPE,
+                data = validationResult.errorMessage ?: "Unsupported file type",
+            )
         }
 
         val key = fileStorage.generateKey(uploaderId.toString(), category.name, file.originalFilename ?: "unknown")
@@ -78,8 +82,7 @@ class FileService(
         val entity = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
         if (entity.status == UploadStatus.PENDING && fileStorage.exists(entity.key)) {
-            val updatedEntity = entity.copy(status = UploadStatus.UPLOADED)
-            return FileDto.from(updatedEntity)
+            entity.status = UploadStatus.UPLOADED
         }
 
         return FileDto.from(entity)
@@ -90,9 +93,12 @@ class FileService(
         val entity = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
         return when (entity.status) {
-            UploadStatus.PENDING -> when (getFileStatus(fileId).status) {
-                UploadStatus.UPLOADED -> getPresignedUrl(entity.key)
-                else -> throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
+            UploadStatus.PENDING -> {
+                if (fileStorage.exists(entity.key)) {
+                    getPresignedUrl(entity.key)
+                } else {
+                    throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
+                }
             }
 
             UploadStatus.FAILED -> throw CoreException(ErrorType.FILE_UPLOAD_ERROR)
