@@ -151,8 +151,7 @@ class S3ClientTest {
 
         // when
         val result = s3Client.upload(fileContent, key, originalFilename, null)
-        println("실제 originalName: ${result.originalName}")
-        println("실제 key: ${result.key}")
+
         // then
         assertThat(result.originalName).isEqualTo(result.originalName)
         assertThat(result.key).contains(result.originalName)
