@@ -89,16 +89,16 @@ class FileService(
 
     @Transactional(readOnly = true)
     fun getDownloadUrl(fileId: Long): String {
-        val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+        val entity = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
-        when (file.status) {
+        when (entity.status) {
             UploadStatus.PENDING -> throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
             UploadStatus.FAILED -> throw CoreException(ErrorType.FILE_UPLOAD_ERROR)
             else -> {}
         }
 
         return try {
-            fileStorage.getPresignedUrl(file.key)
+            fileStorage.getPresignedUrl(entity.key)
         } catch (e: Exception) {
             throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
         }
