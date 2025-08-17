@@ -90,7 +90,19 @@ class FileService(
         val entity = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
         when (entity.status) {
-            UploadStatus.PENDING -> throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
+            UploadStatus.PENDING -> {
+                // PENDING 상태일 때 상태를 다시 확인
+                val updatedDto = getFileStatus(fileId)
+                if (updatedDto.status == UploadStatus.UPLOADED) {
+                    return try {
+                        fileStorage.getPresignedUrl(updatedDto.key)
+                    } catch (e: Exception) {
+                        throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
+                    }
+                } else {
+                    throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
+                }
+            }
             UploadStatus.FAILED -> throw CoreException(ErrorType.FILE_UPLOAD_ERROR)
             UploadStatus.UPLOADED -> {
                 return try {
