@@ -1,48 +1,47 @@
 package io.ark.springboot.core.domain.file
 
-import io.ark.springboot.client.s3.S3Client
-import io.ark.springboot.client.s3.StorageUploadResult
+import io.ark.springboot.core.domain.file.storage.FileStorage
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.FileEntity
 import io.ark.springboot.storage.db.core.file.FileRepository
 import io.ark.springboot.storage.db.core.file.UploadStatus
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.spyk
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.transaction.support.TransactionTemplate
-import java.time.LocalDateTime
 import java.util.Optional
 
 class FileServiceTest {
     private lateinit var fileRepository: FileRepository
-    private lateinit var s3Client: S3Client
+    private lateinit var fileStorage: FileStorage
     private lateinit var transactionTemplate: TransactionTemplate
     private lateinit var fileService: FileService
 
     @BeforeEach
     fun setUp() {
         fileRepository = mockk()
-        s3Client = mockk()
+        fileStorage = mockk()
         transactionTemplate = FakeTransactionTemplate()
-        fileService = spyk(FileService(fileRepository, s3Client, transactionTemplate))
+        fileService = spyk(FileService(fileRepository, fileStorage, transactionTemplate))
     }
 
     @Test
-    fun `파일 업로드 성공`() {
+    fun `파일 업로드 성공`() = runTest {
         // given
         val bytes = "test".toByteArray()
         val originalName = "test.txt"
         val contentType = "text/plain"
-        val now = LocalDateTime.now()
         val key = "test-key"
 
         val savedEntity = FileEntity(
@@ -55,21 +54,11 @@ class FileServiceTest {
             uploaderId = 1L,
         )
 
+        val updatedEntity = savedEntity.copy(status = UploadStatus.UPLOADED)
         val entitySlot = slot<FileEntity>()
-        every { fileRepository.save(capture(entitySlot)) } returns savedEntity
-        every { s3Client.generateKey(any(), any(), any()) } returns key
-        every { s3Client.upload(any(), any(), any(), any()) } returns StorageUploadResult(
-            key = key,
-            originalName = originalName,
-            size = bytes.size.toLong(),
-            mimeType = contentType,
-            uploadedAt = now.toString(),
-            downloadPath = "/download/$key",
-        )
-        // processFileUpload 내부에서 호출되는 findById에 대한 설정 추가
-        every { fileRepository.findById(savedEntity.id) } returns Optional.of(savedEntity)
-        // processFileUpload 메서드를 스파이하여 동기적으로 실행되도록 함
-        every { fileService.processFileUpload(any(), any(), any(), any(), any()) } just runs
+        every { fileRepository.save(capture(entitySlot)) } returns savedEntity andThen updatedEntity
+        every { fileStorage.generateKey(any(), any(), any()) } returns key
+        coEvery { fileStorage.upload(any(), any(), any(), any()) } just runs
 
         // when
         val result = fileService.uploadFile(bytes, originalName, contentType, FileCategory.IMAGE, 1L)
@@ -79,11 +68,12 @@ class FileServiceTest {
         assertThat(result.status).isEqualTo(UploadStatus.PENDING)
         assertThat(result.size).isEqualTo(bytes.size.toLong())
         assertThat(entitySlot.captured.originalName).isEqualTo(originalName)
-        assertThat(entitySlot.captured.status).isEqualTo(UploadStatus.PENDING)
+        assertThat(entitySlot.captured.size).isEqualTo(bytes.size.toLong())
+        assertThat(entitySlot.captured.mimeType).isEqualTo(contentType)
     }
 
     @Test
-    fun `지원하지 않는 파일 타입 업로드 시 예외 발생`() {
+    fun `지원하지 않는 파일 타입 업로드 시 예외 발생`() = runTest {
         // given
         val bytes = "test".toByteArray()
         val originalName = "test.exe"
@@ -98,7 +88,7 @@ class FileServiceTest {
     }
 
     @Test
-    fun `파일 크기 초과 시 예외 발생`() {
+    fun `파일 크기 초과 시 예외 발생`() = runTest {
         // given
         val bytes = ByteArray(51 * 1024 * 1024) // 51MB
         val originalName = "large.txt"
@@ -138,7 +128,7 @@ class FileServiceTest {
         )
 
         every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { s3Client.exists("test-key") } returns true
+        every { fileStorage.exists("test-key") } returns true
         every { fileRepository.save(any()) } returns updatedEntity
 
         // when
@@ -180,7 +170,7 @@ class FileServiceTest {
         )
 
         every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { s3Client.getPresignedUrl(key) } returns presignedUrl
+        every { fileStorage.getPresignedUrl(key) } returns presignedUrl
 
         // when
         val result = fileService.getDownloadUrl(fileId)
@@ -206,90 +196,13 @@ class FileServiceTest {
         )
 
         every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { s3Client.getPresignedUrl(key) } throws RuntimeException("S3 error")
+        every { fileStorage.getPresignedUrl(key) } throws RuntimeException("S3 error")
 
         // when & then
         assertThrows<CoreException> {
             fileService.getDownloadUrl(fileId)
         }.also {
             assertThat(it.errorType).isEqualTo(ErrorType.FILE_NOT_FOUND)
-        }
-    }
-
-    @Test
-    fun `비동기 파일 업로드 성공`() {
-        // given
-        val fileId = 1L
-        val key = "test-key"
-        val bytes = "test".toByteArray()
-        val originalName = "test.txt"
-        val contentType = "text/plain"
-        val now = LocalDateTime.now()
-
-        val entity = FileEntity(
-            originalName = originalName,
-            key = "test-key",
-            size = bytes.size.toLong(),
-            mimeType = contentType,
-            status = UploadStatus.PENDING,
-            category = FileCategory.IMAGE,
-            uploaderId = 1L,
-        )
-
-        val uploadResult = StorageUploadResult(
-            key = "test-key",
-            originalName = originalName,
-            size = bytes.size.toLong(),
-            mimeType = contentType,
-            uploadedAt = now.toString(),
-            downloadPath = "/download/test-key",
-        )
-
-        val updatedEntity = FileEntity(
-            originalName = originalName,
-            key = uploadResult.key,
-            size = bytes.size.toLong(),
-            mimeType = contentType,
-            status = UploadStatus.UPLOADED,
-            category = FileCategory.IMAGE,
-            uploaderId = 1L,
-        )
-
-        every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { s3Client.upload(bytes, key, originalName, contentType) } returns uploadResult
-        every { fileRepository.save(any()) } returns updatedEntity
-
-        // when
-        fileService.processFileUpload(fileId, key, bytes, originalName, contentType)
-    }
-
-    @Test
-    fun `비동기 파일 업로드 실패`() {
-        // given
-        val fileId = 1L
-        val key = "test-key"
-        val bytes = "test".toByteArray()
-        val originalName = "test.txt"
-        val contentType = "text/plain"
-
-        val entity = FileEntity(
-            originalName = originalName,
-            key = "",
-            size = bytes.size.toLong(),
-            mimeType = contentType,
-            status = UploadStatus.PENDING,
-            category = FileCategory.IMAGE,
-            uploaderId = 1L,
-        )
-
-        every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { s3Client.upload(bytes, key, originalName, contentType) } throws RuntimeException("S3 error")
-
-        // when & then
-        assertThrows<CoreException> {
-            fileService.processFileUpload(fileId, key, bytes, originalName, contentType)
-        }.also {
-            assertThat(it.errorType).isEqualTo(ErrorType.FILE_UPLOAD_ERROR)
         }
     }
 }

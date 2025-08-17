@@ -7,6 +7,7 @@ import io.ark.springboot.core.domain.file.FileService
 import io.ark.springboot.core.support.response.ApiResponse
 import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.UploadStatus
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
@@ -26,7 +27,7 @@ class FileController(
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun upload(
         @ModelAttribute uploadFileRequest: UploadFileRequest,
-    ): ApiResponse<FileResponse> {
+    ): ApiResponse<FileResponse> = runBlocking {
         val fileDto = fileService.uploadFile(
             bytes = uploadFileRequest.file.bytes,
             originalName = if (uploadFileRequest.file.originalFilename?.isBlank() == true) {
@@ -40,7 +41,7 @@ class FileController(
         )
         val response = ApiResponse.success(FileResponse.from(fileDto, null))
         logger.info("File upload response: {}", response)
-        return response
+        return@runBlocking response
     }
 
     @GetMapping("/{fileId}/status")

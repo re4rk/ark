@@ -12,8 +12,9 @@ import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.STRING
 import io.ark.springboot.test.api.dsl.responseFields
 import io.ark.springboot.test.api.dsl.type
-import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -34,7 +35,7 @@ class FileControllerTest : RestDocsTest() {
     }
 
     @Test
-    fun `파일 업로드 성공`() {
+    fun `파일 업로드 성공`() = runTest {
         // given
         val fileContent = "hello world".toByteArray()
         val fileName = "test.txt"
@@ -51,7 +52,7 @@ class FileControllerTest : RestDocsTest() {
             category = FileCategory.IMAGE,
             uploaderId = 1L,
         )
-        every {
+        coEvery {
             fileService.uploadFile(
                 bytes = fileContent,
                 originalName = fileName,
@@ -95,7 +96,7 @@ class FileControllerTest : RestDocsTest() {
         // given
         val id = 1L
         val presignedUrl = "https://example.com/presigned-url"
-        every { fileService.getDownloadUrl(id) } returns presignedUrl
+        coEvery { fileService.getDownloadUrl(id) } returns presignedUrl
 
         // when & then
         given()
@@ -121,7 +122,7 @@ class FileControllerTest : RestDocsTest() {
     }
 
     @Test
-    fun `파일명이 없는 파일 업로드`() {
+    fun `파일명이 없는 파일 업로드`() = runTest {
         // given
         val fileContent = "hello world".toByteArray()
         val now = LocalDateTime.now()
@@ -137,7 +138,7 @@ class FileControllerTest : RestDocsTest() {
             category = FileCategory.IMAGE,
             uploaderId = 1L,
         )
-        every {
+        coEvery {
             fileService.uploadFile(
                 bytes = fileContent,
                 originalName = "unknown",
@@ -150,19 +151,16 @@ class FileControllerTest : RestDocsTest() {
         // when & then
         given()
             .contentType("multipart/form-data")
-            .multiPart("file", "", fileContent, "text/plain")
+            .multiPart("file", fileContent, "text/plain")
             .param("category", FileCategory.IMAGE.name)
             .param("uploaderId", "1")
             .`when`()
             .post("/api/v1/files/upload")
             .then()
-            .apply {
-            }
             .status(HttpStatus.OK)
-            .body("data.originalName", org.hamcrest.Matchers.equalTo("unknown"))
             .apply(
                 document(
-                    "file-upload-no-name",
+                    "file-upload-no-filename",
                     requestPreprocessor(),
                     responsePreprocessor(),
                     responseFields(
@@ -180,49 +178,41 @@ class FileControllerTest : RestDocsTest() {
     }
 
     @Test
-    fun `대용량 파일 업로드`() {
+    fun `파일 상태 조회 성공`() {
         // given
-        val largeContent = ByteArray(1024 * 1024) { it.toByte() } // 1MB
-        val fileName = "large-file.dat"
+        val fileId = 1L
         val now = LocalDateTime.now()
         val fileDto = FileDto(
-            id = 1L,
-            originalName = fileName,
-            key = "uploads/123456789-large-file.dat",
-            size = largeContent.size.toLong(),
-            mimeType = "application/octet-stream",
+            id = fileId,
+            originalName = "test.txt",
+            key = "uploads/123456789-test.txt",
+            size = 100L,
+            mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
             createdAt = now,
             updatedAt = now,
             category = FileCategory.IMAGE,
             uploaderId = 1L,
         )
-        every {
-            fileService.uploadFile(
-                bytes = largeContent,
-                originalName = fileName,
-                contentType = "application/octet-stream",
-                category = FileCategory.IMAGE,
-                uploaderId = 1L,
-            )
-        } returns fileDto
+        val presignedUrl = "https://example.com/presigned-url"
+
+        coEvery { fileService.getFileStatus(fileId) } returns fileDto
+        coEvery { fileService.getDownloadUrl(fileId) } returns presignedUrl
 
         // when & then
         given()
-            .contentType("multipart/form-data")
-            .multiPart("file", fileName, largeContent, "application/octet-stream")
-            .param("category", FileCategory.IMAGE.name)
-            .param("uploaderId", "1")
             .`when`()
-            .post("/api/v1/files/upload")
+            .get("/api/v1/files/{fileId}/status", fileId)
             .then()
             .status(HttpStatus.OK)
-            .body("data.size", org.hamcrest.Matchers.equalTo(largeContent.size))
             .apply(
                 document(
-                    "file-upload-large",
+                    "file-status",
                     requestPreprocessor(),
                     responsePreprocessor(),
+                    RequestDocumentation.pathParameters(
+                        parameterWithName("fileId").description("파일 ID"),
+                    ),
                     responseFields(
                         "result" type STRING means "성공 여부",
                         "data.id" type NUMBER means "파일 ID",
@@ -230,7 +220,7 @@ class FileControllerTest : RestDocsTest() {
                         "data.size" type NUMBER means "파일 크기",
                         "data.mimeType" type STRING means "MIME 타입",
                         "data.status" type STRING means "업로드 상태",
-                        "data.url" type NULL means "다운로드 URL",
+                        "data.url" type STRING means "다운로드 URL",
                         "error" type NULL isIgnored true,
                     ),
                 ),

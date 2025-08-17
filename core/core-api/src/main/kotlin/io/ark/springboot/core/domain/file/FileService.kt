@@ -1,13 +1,15 @@
 package io.ark.springboot.core.domain.file
 
-import io.ark.springboot.client.s3.S3Client
+import io.ark.springboot.core.domain.file.storage.FileStorage
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.FileEntity
 import io.ark.springboot.storage.db.core.file.FileRepository
 import io.ark.springboot.storage.db.core.file.UploadStatus
-import org.springframework.scheduling.annotation.Async
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
@@ -15,11 +17,11 @@ import org.springframework.transaction.support.TransactionTemplate
 @Service
 class FileService(
     private val fileRepository: FileRepository,
-    private val s3Client: S3Client,
+    private val fileStorage: FileStorage,
     private val transactionTemplate: TransactionTemplate,
 ) {
     @Transactional
-    fun uploadFile(
+    suspend fun uploadFile(
         bytes: ByteArray,
         originalName: String,
         contentType: String,
@@ -33,7 +35,7 @@ class FileService(
             throw CoreException(ErrorType.FILE_SIZE_EXCEEDED)
         }
 
-        val key = s3Client.generateKey(uploaderId.toString(), category.name, originalName)
+        val key = fileStorage.generateKey(uploaderId.toString(), category.name, originalName)
         val entity = FileEntity(
             originalName = originalName,
             key = key,
@@ -43,15 +45,32 @@ class FileService(
             category = category,
             uploaderId = uploaderId,
         )
+
         val savedEntity = fileRepository.save(entity)
 
-        processFileUpload(
-            fileId = savedEntity.id,
-            key = key,
-            bytes = bytes,
-            originalName = originalName,
-            contentType = contentType,
-        )
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                fileStorage.upload(
+                    bytes = bytes,
+                    key = key,
+                    originalFilename = originalName,
+                    contentType = contentType,
+                )
+
+                transactionTemplate.execute {
+                    val pendedEntity = fileRepository.findById(savedEntity.id)
+                        .orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+                    pendedEntity.status = UploadStatus.UPLOADED
+                }
+            } catch (e: Exception) {
+                transactionTemplate.execute {
+                    val pendedEntity = fileRepository.findById(savedEntity.id)
+                        .orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+                    pendedEntity.status = UploadStatus.FAILED
+                }
+                throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)
+            }
+        }
 
         return FileDto.from(savedEntity)
     }
@@ -61,7 +80,7 @@ class FileService(
         val entity = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
         if (entity.status == UploadStatus.PENDING) {
-            if (s3Client.exists(entity.key)) {
+            if (fileStorage.exists(entity.key)) {
                 val updated = entity.copy(status = UploadStatus.UPLOADED)
                 return FileDto.from(fileRepository.save(updated))
             }
@@ -79,7 +98,7 @@ class FileService(
                 throw CoreException(ErrorType.FILE_NOT_FOUND)
             }
 
-            return s3Client.getPresignedUrl(file.key)
+            return fileStorage.getPresignedUrl(file.key)
         } catch (e: Exception) {
             throw CoreException(ErrorType.FILE_NOT_FOUND, cause = e)
         }
@@ -93,35 +112,6 @@ class FileService(
     // TODO: 파일 크기 제한을 설정
     private fun validateFileSize(size: Long): Boolean {
         return size <= MAX_FILE_SIZE
-    }
-
-    @Async
-    fun processFileUpload(
-        fileId: Long,
-        key: String,
-        bytes: ByteArray,
-        originalName: String,
-        contentType: String?,
-    ) {
-        try {
-            s3Client.upload(
-                bytes = bytes,
-                key = key,
-                originalFilename = originalName,
-                contentType = contentType.toString(),
-            )
-
-            transactionTemplate.execute {
-                val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
-                file.status = UploadStatus.UPLOADED
-            }
-        } catch (e: Exception) {
-            transactionTemplate.execute {
-                val file = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
-                file.status = UploadStatus.FAILED
-            }
-            throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)
-        }
     }
 
     companion object {
