@@ -13,12 +13,12 @@ class FeedStorage(
 ) {
     @Transactional
     fun save(feedData: FeedData): Feed {
-        val entity = feedData.toEntity()
+        val entity = feedData.toFeedEntity()
         return feedJpaRepository.save(entity).toFeed()
     }
 
     companion object {
-        fun FeedEntity.toFeed() = Feed(
+        private fun FeedEntity.toFeed() = Feed(
             id = id,
             content = content,
             isPublic = isPublic,
@@ -29,7 +29,7 @@ class FeedStorage(
             updatedAt = updatedAt,
         )
 
-        fun FeedData.toEntity() = FeedEntity(
+        private fun FeedData.toFeedEntity() = FeedEntity(
             content = content,
             isPublic = isPublic,
             category = category,
