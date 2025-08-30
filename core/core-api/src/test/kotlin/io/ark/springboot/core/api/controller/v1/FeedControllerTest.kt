@@ -42,7 +42,7 @@ class FeedControllerTest : RestDocsTest() {
         val documentName: String,
         val isPublic: Boolean = true,
         val authorId: Long = 1L,
-        val feedId: Long = 1L
+        val feedId: Long = 1L,
     ) {
         fun createFeedData() = FeedData(
             content = content,
@@ -90,6 +90,7 @@ class FeedControllerTest : RestDocsTest() {
             val createdFeed = given.createFeed()
 
             every { feedService.createFeed(any()) } returns createdFeed
+            every { feedService.getFeed(given.feedId) } returns createdFeed
 
             // when & then
             given()
@@ -109,6 +110,63 @@ class FeedControllerTest : RestDocsTest() {
                             "category" type ENUM(FeedCategory::class) means "피드 카테고리",
                             "authorId" type NUMBER means "작성자 ID",
                         ),
+                        responseFields(
+                            "result" type STRING means "응답 결과",
+                            "data.id" type NUMBER means "피드 ID",
+                            "data.content" type STRING means "피드 내용",
+                            "data.isPublic" type BOOLEAN means "공개 여부",
+                            "data.category" type STRING means "피드 카테고리",
+                            "data.authorId" type NUMBER means "작성자 ID",
+                            "data.status" type STRING means "피드 상태",
+                            "data.createdAt" type DATETIME means "생성일시",
+                            "data.updatedAt" type DATETIME means "수정일시",
+                            "error" type STRING isIgnored true,
+                        ),
+                    ),
+                )
+        }
+    }
+
+    @Test
+    fun `피드 단건조회 API 문서화`() {
+        // given
+        val testCases = listOf(
+            GIVEN(
+                content = "안녕하세요! 오늘은 코딩 공부를 했습니다. #코딩 #개발",
+                category = FeedCategory.TECH,
+                documentName = "feed-get-tech",
+                feedId = 1L,
+            ),
+            GIVEN(
+                content = "오늘은 맛있는 커피를 마셨습니다 ☕ #커피 #라이프스타일",
+                category = FeedCategory.LIFESTYLE,
+                documentName = "feed-get-lifestyle",
+                isPublic = false,
+                feedId = 2L,
+            ),
+            GIVEN(
+                content = "제주도 여행 중입니다! 🏝️ #제주도 #여행 #휴가",
+                category = FeedCategory.TRAVEL,
+                documentName = "feed-get-travel",
+                feedId = 3L,
+            ),
+        )
+
+        testCases.forEach { given ->
+            val feed = given.createFeed()
+
+            every { feedService.getFeed(given.feedId) } returns feed
+
+            // when & then
+            given()
+                .get("/api/v1/feeds/${given.feedId}")
+                .then()
+                .status(HttpStatus.OK)
+                .apply(
+                    document(
+                        given.documentName,
+                        requestPreprocessor(),
+                        responsePreprocessor(),
                         responseFields(
                             "result" type STRING means "응답 결과",
                             "data.id" type NUMBER means "피드 ID",

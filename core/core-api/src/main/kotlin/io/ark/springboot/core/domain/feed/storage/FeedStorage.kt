@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 @Component
+@Transactional(readOnly = true)
 class FeedStorage(
     private val feedJpaRepository: FeedJpaRepository,
 ) {
@@ -16,6 +17,10 @@ class FeedStorage(
         val entity = feedData.toFeedEntity()
         return feedJpaRepository.save(entity).toFeed()
     }
+
+    fun getFeed(id: Long): Feed = feedJpaRepository.findById(id)
+        .orElseThrow { NoSuchElementException("Feed not found") }
+        .toFeed()
 
     companion object {
         private fun FeedEntity.toFeed() = Feed(

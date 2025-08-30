@@ -39,10 +39,9 @@ class FeedService(
     }
 
     fun getFeed(feedId: Long): Feed {
-        // TODO: 실제 구현 예정
-        // 1. 피드 조회
-        // 2. 댓글 목록 조회
-        throw NotImplementedError("구현 예정")
+        val feed = feedStorage.getFeed(feedId)
+        // TODO: 2. 댓글 목록 조회
+        return feed
     }
 
     @Transactional

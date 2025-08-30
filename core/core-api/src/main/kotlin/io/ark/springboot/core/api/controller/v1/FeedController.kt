@@ -4,6 +4,8 @@ import io.ark.springboot.core.domain.feed.Feed
 import io.ark.springboot.core.domain.feed.FeedData
 import io.ark.springboot.core.domain.feed.FeedService
 import io.ark.springboot.core.support.response.ApiResponse
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -17,6 +19,11 @@ class FeedController(
     @PostMapping
     fun createFeed(@RequestBody feedData: FeedData): ApiResponse<Feed> {
         val feed = feedService.createFeed(feedData)
-        return ApiResponse.success(feed)
+        return ApiResponse.success(feedService.getFeed(feed.id))
+    }
+
+    @GetMapping("/{feedId}")
+    fun getFeed(@PathVariable feedId: Long): ApiResponse<Feed> {
+        return ApiResponse.success(feedService.getFeed(feedId))
     }
 }
