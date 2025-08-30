@@ -1,6 +1,7 @@
 package io.ark.springboot.core.domain.feed
 
 import io.ark.springboot.core.domain.common.Slice
+import io.ark.springboot.core.enums.feed.FeedCategory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

@@ -1,4 +1,4 @@
-package io.ark.springboot.core.domain.feed
+package io.ark.springboot.core.enums.feed
 
 enum class FeedStatus {
     ACTIVE, // 활성
