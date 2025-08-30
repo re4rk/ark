@@ -1,5 +1,6 @@
 package io.ark.springboot.core.api.controller.v1
 
+import io.ark.springboot.core.domain.common.Slice
 import io.ark.springboot.core.domain.feed.Feed
 import io.ark.springboot.core.domain.feed.FeedData
 import io.ark.springboot.core.domain.feed.FeedService
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -25,5 +27,12 @@ class FeedController(
     @GetMapping("/{feedId}")
     fun getFeed(@PathVariable feedId: Long): ApiResponse<Feed> {
         return ApiResponse.success(feedService.getFeed(feedId))
+    }
+
+    @GetMapping
+    fun getFeeds(
+        @RequestParam(required = false) cursor: Long?,
+    ): ApiResponse<Slice<Feed>> {
+        return ApiResponse.success(feedService.getFeeds(cursor = cursor))
     }
 }

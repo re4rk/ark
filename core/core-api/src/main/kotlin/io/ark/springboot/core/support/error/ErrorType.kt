@@ -17,6 +17,9 @@ enum class ErrorType(val status: HttpStatus, val code: ErrorCode, val message: S
     FILE_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.FILE_UPLOAD_ERROR, "파일 업로드 중 오류가 발생했습니다.", LogLevel.ERROR),
     FILE_TOO_MANY_UPLOADS(HttpStatus.BAD_REQUEST, ErrorCode.FILE_TOO_MANY_UPLOADS, "동시 업로드 파일 수가 제한을 초과했습니다.", LogLevel.WARN),
 
+    // 피드 관련 오류
+    FEED_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorCode.FEED_NOT_FOUND, "피드를 찾을 수 없습니다.", LogLevel.WARN),
+
     // 콘텐츠 검증 오류
     CONTENT_INVALID_LENGTH(HttpStatus.BAD_REQUEST, ErrorCode.CONTENT_INVALID_LENGTH, "콘텐츠 길이가 유효하지 않습니다.", LogLevel.WARN),
     CONTENT_BANNED_WORD(HttpStatus.BAD_REQUEST, ErrorCode.CONTENT_BANNED_WORD, "금지어가 포함되어 있습니다.", LogLevel.WARN),

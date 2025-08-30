@@ -10,6 +10,7 @@ enum class ErrorCode {
     FILE_UPLOAD_ERROR,
     FILE_DOWNLOAD_ERROR,
     FILE_TOO_MANY_UPLOADS,
+    FEED_NOT_FOUND,
     CONTENT_INVALID_LENGTH, // 콘텐츠 길이 오류
     CONTENT_BANNED_WORD, // 금지어 포함 오류
     INVALID_ENUM_VALUE,
