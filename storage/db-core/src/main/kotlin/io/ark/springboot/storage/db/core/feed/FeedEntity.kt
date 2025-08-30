@@ -12,18 +12,18 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "feeds")
 class FeedEntity(
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, name = "content", columnDefinition = "TEXT")
     var content: String,
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "is_public")
     var isPublic: Boolean = true,
 
-    @Column(nullable = false) @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "category") @Enumerated(EnumType.STRING)
     var category: FeedCategory,
 
     @Column(nullable = false, name = "author_id")
     var authorId: Long,
 
-    @Column(nullable = false) @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "status") @Enumerated(EnumType.STRING)
     var status: FeedStatus = FeedStatus.ACTIVE,
 ) : BaseEntity()
