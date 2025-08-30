@@ -1,6 +1,8 @@
 package io.ark.springboot.core.domain.feed
 
 import io.ark.springboot.core.domain.common.Slice
+import io.ark.springboot.core.domain.feed.storage.FeedStorage
+import io.ark.springboot.core.domain.feed.validator.FeedContentValidator
 import io.ark.springboot.core.enums.feed.FeedCategory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -8,17 +10,17 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class FeedService(
-    // TODO: FeedRepository, UserService 등 의존성 주입 예정
+    private val feedStorage: FeedStorage,
+    private val feedContentValidator: FeedContentValidator,
 ) {
 
     @Transactional
     fun createFeed(feedData: FeedData): Feed {
-        // TODO: 실제 구현 예정
-        // 1. 콘텐츠 검증 (길이, 금지어 등)
-        // 2. 해시태그 파싱 및 정규화
-        // 3. FeedEntity 저장
-        // 4. 해시태그 테이블에 저장
-        throw NotImplementedError("구현 예정")
+        feedContentValidator.validate(feedData.content)
+        val feed = feedStorage.save(feedData)
+        // TODO: 1. 해시태그 파싱 및 정규화
+        // TODO: 2. 해시태그 테이블에 저장
+        return feed
     }
 
     fun getFeeds(

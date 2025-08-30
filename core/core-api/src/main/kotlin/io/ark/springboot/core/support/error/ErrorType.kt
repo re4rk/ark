@@ -16,4 +16,8 @@ enum class ErrorType(val status: HttpStatus, val code: ErrorCode, val message: S
     FILE_ACCESS_DENIED(HttpStatus.FORBIDDEN, ErrorCode.FILE_ACCESS_DENIED, "파일에 접근할 권한이 없습니다.", LogLevel.WARN),
     FILE_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.FILE_UPLOAD_ERROR, "파일 업로드 중 오류가 발생했습니다.", LogLevel.ERROR),
     FILE_TOO_MANY_UPLOADS(HttpStatus.BAD_REQUEST, ErrorCode.FILE_TOO_MANY_UPLOADS, "동시 업로드 파일 수가 제한을 초과했습니다.", LogLevel.WARN),
+
+    // 콘텐츠 검증 오류
+    CONTENT_INVALID_LENGTH(HttpStatus.BAD_REQUEST, ErrorCode.CONTENT_INVALID_LENGTH, "콘텐츠 길이가 유효하지 않습니다.", LogLevel.WARN),
+    CONTENT_BANNED_WORD(HttpStatus.BAD_REQUEST, ErrorCode.CONTENT_BANNED_WORD, "금지어가 포함되어 있습니다.", LogLevel.WARN),
 }
