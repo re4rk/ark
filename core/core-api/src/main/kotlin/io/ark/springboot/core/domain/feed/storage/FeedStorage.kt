@@ -32,7 +32,7 @@ class FeedStorage(
             val feeds = it.take(limit.toInt()).map { feedEntity -> feedEntity.toFeed() }
             val lastCursor = feeds.lastOrNull()?.id ?: 0
             val hasNext = it.size == (limit + 1).toInt()
-            Slice(data = feeds, lastCursor = lastCursor, hasNext = hasNext)
+            Slice(content = feeds, lastCursor = lastCursor, hasNext = hasNext)
         }
 
     @Transactional
