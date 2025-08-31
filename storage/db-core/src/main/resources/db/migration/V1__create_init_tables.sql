@@ -42,3 +42,19 @@ CREATE TABLE IF NOT EXISTS feeds (
 ) ENGINE = InnoDB
   DEFAULT CHARACTER SET = utf8mb4;
 
+CREATE TABLE IF NOT EXISTS comments (
+    `id`                BIGINT          NOT NULL AUTO_INCREMENT,
+    
+    `content`           TEXT            NOT NULL COMMENT '댓글 내용',
+    `feed_id`           BIGINT          NOT NULL COMMENT '피드 ID',
+    `author_id`         BIGINT          NOT NULL COMMENT '작성자 ID',
+    `parent_comment_id` BIGINT          NULL DEFAULT NULL COMMENT '부모 댓글 ID (대댓글인 경우)',
+
+    `created_at`        TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `updated_at`        TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    `deleted_at`        TIMESTAMP(6)    NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    INDEX `idx_feed_id` (`feed_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARACTER SET = utf8mb4;
+
