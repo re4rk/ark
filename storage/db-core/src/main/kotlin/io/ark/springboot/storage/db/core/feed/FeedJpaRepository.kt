@@ -1,6 +1,7 @@
 package io.ark.springboot.storage.db.core.feed
 
 import com.querydsl.core.BooleanBuilder
+import io.ark.springboot.core.enums.feed.FeedStatus
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport
 import org.springframework.stereotype.Repository
@@ -20,7 +21,8 @@ class FeedRepository(
         val f = QFeedEntity.feedEntity
 
         val whereClause = BooleanBuilder().apply {
-            cursor?.let { this.and(f.id.lt(it)) }
+            cursor?.let { and(f.id.lt(it)) }
+            and(f.status.eq(FeedStatus.ACTIVE))
         }
 
         return from(f)

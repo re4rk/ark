@@ -3,12 +3,14 @@ package io.ark.springboot.core.domain.feed.storage
 import io.ark.springboot.core.domain.common.Slice
 import io.ark.springboot.core.domain.feed.Feed
 import io.ark.springboot.core.domain.feed.FeedData
+import io.ark.springboot.core.enums.feed.FeedStatus
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.feed.FeedEntity
 import io.ark.springboot.storage.db.core.feed.FeedRepository
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Component
 @Transactional(readOnly = true)
@@ -32,6 +34,24 @@ class FeedStorage(
             val hasNext = it.size == (limit + 1).toInt()
             Slice(data = feeds, lastCursor = lastCursor, hasNext = hasNext)
         }
+
+    @Transactional
+    fun update(feedId: Long, feedData: FeedData): Feed {
+        val feedEntity = feedRepository.findById(feedId)
+            ?: throw CoreException(ErrorType.FEED_NOT_FOUND)
+        feedEntity.content = feedData.content
+        feedEntity.isPublic = feedData.isPublic
+        feedEntity.category = feedData.category
+        return feedRepository.save(feedEntity).toFeed()
+    }
+
+    @Transactional
+    fun delete(feedId: Long) {
+        val feedEntity = feedRepository.findById(feedId)
+            ?: throw CoreException(ErrorType.FEED_NOT_FOUND)
+        feedEntity.status = FeedStatus.DELETED
+        feedEntity.deletedAt = LocalDateTime.now()
+    }
 
     companion object {
         private fun FeedEntity.toFeed() = Feed(

@@ -39,18 +39,14 @@ class FeedService(
     }
 
     @Transactional
-    fun updateFeed(feedId: Long, feedData: FeedData): Feed {
-        // TODO: 실제 구현 예정
-        // 1. 권한 검증 (작성자만 수정 가능)
-        // 2. 피드 업데이트
-        throw NotImplementedError("구현 예정")
+    fun updateFeed(feedId: Long, feed: FeedData): Feed {
+        // TODO: 1. 권한 검증 (작성자만 수정 가능)
+        return feedStorage.update(feedId, feed)
     }
 
     @Transactional
     fun deleteFeed(feedId: Long) {
-        // TODO: 실제 구현 예정
-        // 1. 권한 검증 (작성자만 삭제 가능)
-        // 2. 피드 삭제 (soft delete)
-        throw NotImplementedError("구현 예정")
+        // TODO: 1. 권한 검증 (작성자만 삭제 가능)
+        feedStorage.delete(feedId)
     }
 }
