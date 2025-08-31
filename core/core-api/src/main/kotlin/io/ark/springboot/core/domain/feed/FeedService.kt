@@ -24,7 +24,6 @@ class FeedService(
 
     fun getFeed(feedId: Long): Feed {
         val feed = feedStorage.getFeed(feedId)
-        // TODO: 1. 댓글 목록 조회
         return feed
     }
 
@@ -38,8 +37,9 @@ class FeedService(
     }
 
     @Transactional
-    fun updateFeed(feedId: Long, feed: FeedData): Feed {
-        return feedStorage.update(feedId, feed)
+    fun updateFeed(feedId: Long, feedData: FeedData): Feed {
+        feedContentValidator.validate(feedData.content)
+        return feedStorage.update(feedId, feedData)
     }
 
     @Transactional
