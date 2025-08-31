@@ -24,29 +24,26 @@ class FeedService(
 
     fun getFeed(feedId: Long): Feed {
         val feed = feedStorage.getFeed(feedId)
-        // TODO: 2. 댓글 목록 조회
+        // TODO: 1. 댓글 목록 조회
         return feed
     }
 
     fun getFeeds(
         cursor: Long?,
     ): Slice<Feed> {
-        // TODO: 실제 구현 예정
         val feeds = feedStorage.getFeeds(cursor)
-        // 2. 작성자 정보 조회
-        // 3. 좋아요 상태, 북마크 상태 조회
+        // TODO: 1. 작성자 정보 조회
+        // TODO: 2. 좋아요 상태, 북마크 상태 조회
         return feeds
     }
 
     @Transactional
     fun updateFeed(feedId: Long, feed: FeedData): Feed {
-        // TODO: 1. 권한 검증 (작성자만 수정 가능)
         return feedStorage.update(feedId, feed)
     }
 
     @Transactional
     fun deleteFeed(feedId: Long) {
-        // TODO: 1. 권한 검증 (작성자만 삭제 가능)
         feedStorage.delete(feedId)
     }
 }

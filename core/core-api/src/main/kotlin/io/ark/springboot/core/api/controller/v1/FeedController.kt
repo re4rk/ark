@@ -17,9 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/feeds")
-class FeedController(
-    private val feedService: FeedService,
-) {
+class FeedController(private val feedService: FeedService) {
     @PostMapping
     fun createFeed(@RequestBody feedData: FeedData): ApiResponse<Feed> {
         val feed = feedService.createFeed(feedData)
@@ -32,12 +30,11 @@ class FeedController(
     }
 
     @GetMapping
-    fun getFeeds(
-        @RequestParam(required = false) cursor: Long?,
-    ): ApiResponse<Slice<Feed>> {
+    fun getFeeds(@RequestParam(required = false) cursor: Long?): ApiResponse<Slice<Feed>> {
         return ApiResponse.success(feedService.getFeeds(cursor = cursor))
     }
 
+    // TODO: 1. 권한 검증 (작성자만 수정 가능)
     @PutMapping("/{feedId}")
     fun updateFeed(
         @PathVariable feedId: Long,
@@ -47,10 +44,9 @@ class FeedController(
         return ApiResponse.success(feed)
     }
 
+    // TODO: 1. 권한 검증 (작성자만 삭제 가능)
     @DeleteMapping("/{feedId}")
-    fun deleteFeed(
-        @PathVariable feedId: Long,
-    ): ApiResponse<Unit> {
+    fun deleteFeed(@PathVariable feedId: Long): ApiResponse<Unit> {
         feedService.deleteFeed(feedId)
         return ApiResponse.success(Unit)
     }
