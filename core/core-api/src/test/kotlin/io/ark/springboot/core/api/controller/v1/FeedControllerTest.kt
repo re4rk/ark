@@ -4,6 +4,7 @@ import io.ark.springboot.core.domain.common.Slice
 import io.ark.springboot.core.domain.feed.Feed
 import io.ark.springboot.core.domain.feed.FeedData
 import io.ark.springboot.core.domain.feed.FeedService
+import io.ark.springboot.core.domain.feed.comment.CommentService
 import io.ark.springboot.core.enums.feed.FeedCategory
 import io.ark.springboot.core.enums.feed.FeedStatus
 import io.ark.springboot.test.api.RestDocsTest
@@ -29,12 +30,14 @@ import java.time.LocalDateTime
 
 class FeedControllerTest : RestDocsTest() {
     private lateinit var feedService: FeedService
+    private lateinit var commentService: CommentService
     private lateinit var controller: FeedController
 
     @BeforeEach
     fun setUp() {
         feedService = mockk()
-        controller = FeedController(feedService)
+        commentService = mockk()
+        controller = FeedController(feedService, commentService)
         mockMvc = mockController(controller)
     }
 

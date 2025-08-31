@@ -4,6 +4,8 @@ import io.ark.springboot.core.domain.common.Slice
 import io.ark.springboot.core.domain.feed.Feed
 import io.ark.springboot.core.domain.feed.FeedData
 import io.ark.springboot.core.domain.feed.FeedService
+import io.ark.springboot.core.domain.feed.comment.Comment
+import io.ark.springboot.core.domain.feed.comment.CommentService
 import io.ark.springboot.core.support.response.ApiResponse
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -17,7 +19,10 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/feeds")
-class FeedController(private val feedService: FeedService) {
+class FeedController(
+    private val feedService: FeedService,
+    private val commentService: CommentService,
+) {
     @PostMapping
     fun createFeed(@RequestBody feedData: FeedData): ApiResponse<Feed> {
         val feed = feedService.createFeed(feedData)
@@ -49,5 +54,14 @@ class FeedController(private val feedService: FeedService) {
     fun deleteFeed(@PathVariable feedId: Long): ApiResponse<Unit> {
         feedService.deleteFeed(feedId)
         return ApiResponse.success(Unit)
+    }
+
+    @GetMapping("/{feedId}/comments")
+    fun getFeedComments(
+        @PathVariable feedId: Long,
+        @RequestParam(required = false) cursor: Long?,
+    ): ApiResponse<Slice<Comment>> {
+        val comments = commentService.getCommentsByFeedId(feedId, cursor)
+        return ApiResponse.success(comments)
     }
 }

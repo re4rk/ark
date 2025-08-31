@@ -19,6 +19,10 @@ class CommentService(
         return commentStorage.save(commentData)
     }
 
+    fun getComment(commentId: Long): Comment {
+        return commentStorage.getComment(commentId)
+    }
+
     fun getCommentsByFeedId(feedId: Long, cursor: Long?, limit: Long = 10L): Slice<Comment> {
         return commentStorage.getCommentsByFeedId(feedId, cursor, limit)
     }

@@ -22,6 +22,9 @@ class CommentStorage(
         return commentRepository.save(entity).toComment()
     }
 
+    fun getComment(commentId: Long): Comment = commentRepository.findById(commentId)?.toComment()
+        ?: throw CoreException(ErrorType.COMMENT_NOT_FOUND)
+
     fun getCommentsByFeedId(feedId: Long, cursor: Long?, limit: Long = 10L): Slice<Comment> = commentRepository
         .findByFeedIdAndCursorAndLimit(feedId = feedId, cursor = cursor, limit = limit)
         .let {
