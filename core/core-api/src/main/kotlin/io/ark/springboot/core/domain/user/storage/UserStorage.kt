@@ -73,9 +73,6 @@ class UserStorage(
             username = username,
             password = password,
             name = name,
-            phoneNumber = null, // UserEntity에 phoneNumber 필드가 없으므로 null
-            isActive = status == UserStatus.ACTIVE,
-            profileImageUrl = null, // UserEntity에 profileImageUrl 필드가 없으므로 null
         )
 
         private fun UserData.toUserEntity() = UserEntity(
