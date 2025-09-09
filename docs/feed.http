@@ -1,0 +1,89 @@
+###
+POST http://localhost:8080/api/v1/feeds
+Content-Type: application/json
+
+{
+  "content": "This is my first feed!",
+  "isPublic": true,
+  "category": "LIFESTYLE",
+  "authorId": 1
+}
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+
+    client.global.set("feed_id", BigInt(response.body.data.id));
+%}
+
+###
+GET http://localhost:8080/api/v1/feeds/{{feed_id}}
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
+GET http://localhost:8080/api/v1/feeds
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
+PUT http://localhost:8080/api/v1/feeds/{{feed_id}}
+Content-Type: application/json
+
+{
+  "content": "This is my first feasdasded!",
+  "isPublic": true,
+  "category": "LIFESTYLE",
+  "authorId": 1
+}
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
+POST http://localhost:8080/api/v1/comments
+Content-Type: application/json
+
+{
+    "feedId": {{feed_id}},
+    "authorId": 1,
+    "content": "This is my first comment!"
+}
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
+GET http://localhost:8080/api/v1/feeds/{{feed_id}}/comments
+Content-Type: application/json
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
+DELETE http://localhost:8080/api/v1/feeds/{{feed_id}}
+Content-Type: application/json
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
