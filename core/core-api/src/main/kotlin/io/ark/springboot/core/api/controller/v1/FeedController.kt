@@ -24,9 +24,9 @@ class FeedController(
     private val commentService: CommentService,
 ) {
     @PostMapping
-    fun createFeed(@RequestBody feedData: FeedData): ApiResponse<Feed> {
+    fun createFeed(@RequestBody feedData: FeedData): ApiResponse<Long> {
         val feed = feedService.createFeed(feedData)
-        return ApiResponse.success(feedService.getFeed(feed.id))
+        return ApiResponse.success(feed.id)
     }
 
     @GetMapping("/{feedId}")
@@ -44,9 +44,9 @@ class FeedController(
     fun updateFeed(
         @PathVariable feedId: Long,
         @RequestBody feedData: FeedData,
-    ): ApiResponse<Feed> {
+    ): ApiResponse<Long> {
         val feed = feedService.updateFeed(feedId, feedData)
-        return ApiResponse.success(feed)
+        return ApiResponse.success(feed.id)
     }
 
     // TODO: 1. 권한 검증 (작성자만 삭제 가능)

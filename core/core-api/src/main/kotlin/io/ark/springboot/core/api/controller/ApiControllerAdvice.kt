@@ -35,7 +35,7 @@ class ApiControllerAdvice {
                 // Enum 값 오류
                 val errorData = mapOf(
                     "invalidValue" to cause.value.toString(),
-                    "acceptedValues" to cause.targetType.enumConstants.joinToString(", "),
+                    "acceptedValues" to (cause.targetType.enumConstants?.joinToString(", ") ?: ""),
                 )
                 return handleCoreException(CoreException(ErrorType.INVALID_ENUM_VALUE, errorData))
             }

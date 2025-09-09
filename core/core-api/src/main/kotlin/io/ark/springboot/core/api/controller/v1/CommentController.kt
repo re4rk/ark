@@ -1,6 +1,5 @@
 package io.ark.springboot.core.api.controller.v1
 
-import io.ark.springboot.core.domain.feed.comment.Comment
 import io.ark.springboot.core.domain.feed.comment.CommentData
 import io.ark.springboot.core.domain.feed.comment.CommentService
 import io.ark.springboot.core.support.response.ApiResponse
@@ -18,18 +17,18 @@ class CommentController(
     private val commentService: CommentService,
 ) {
     @PostMapping
-    fun createComment(@RequestBody commentData: CommentData): ApiResponse<Comment> {
+    fun createComment(@RequestBody commentData: CommentData): ApiResponse<Long> {
         val comment = commentService.createComment(commentData)
-        return ApiResponse.success(commentService.getComment(comment.id))
+        return ApiResponse.success(comment.id)
     }
 
     @PutMapping("/{commentId}")
     fun updateComment(
         @PathVariable commentId: Long,
         @RequestBody commentData: CommentData,
-    ): ApiResponse<Comment> {
+    ): ApiResponse<Long> {
         val comment = commentService.updateComment(commentId, commentData)
-        return ApiResponse.success(comment)
+        return ApiResponse.success(comment.id)
     }
 
     @DeleteMapping("/{commentId}")
