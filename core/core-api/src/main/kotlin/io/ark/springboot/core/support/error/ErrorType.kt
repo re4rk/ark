@@ -27,6 +27,11 @@ enum class ErrorType(val status: HttpStatus, val code: ErrorCode, val message: S
     CONTENT_INVALID_LENGTH(HttpStatus.BAD_REQUEST, ErrorCode.CONTENT_INVALID_LENGTH, "콘텐츠 길이가 유효하지 않습니다.", LogLevel.WARN),
     CONTENT_BANNED_WORD(HttpStatus.BAD_REQUEST, ErrorCode.CONTENT_BANNED_WORD, "금지어가 포함되어 있습니다.", LogLevel.WARN),
 
+    // 사용자 관련 오류
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다.", LogLevel.WARN),
+    USER_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, ErrorCode.USER_EMAIL_ALREADY_EXISTS, "이미 존재하는 이메일입니다.", LogLevel.WARN),
+    USER_USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, ErrorCode.USER_USERNAME_ALREADY_EXISTS, "이미 존재하는 사용자명입니다.", LogLevel.WARN),
+
     // 검증 오류
     INVALID_FEED_ID(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_FEED_ID, "유효하지 않은 피드 ID입니다.", LogLevel.WARN),
     INVALID_AUTHOR_ID(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_AUTHOR_ID, "유효하지 않은 작성자 ID입니다.", LogLevel.WARN),

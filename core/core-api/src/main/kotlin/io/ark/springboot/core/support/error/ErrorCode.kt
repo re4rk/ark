@@ -1,6 +1,9 @@
 package io.ark.springboot.core.support.error
 
 enum class ErrorCode {
+    USER_NOT_FOUND,
+    USER_EMAIL_ALREADY_EXISTS,
+    USER_USERNAME_ALREADY_EXISTS,
     FILE_UNSUPPORTED_TYPE,
     FILE_SIZE_EXCEEDED,
     FILE_MISSING,
