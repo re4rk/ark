@@ -1,7 +1,9 @@
 package io.ark.springboot.storage.db.core.comment
 
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.stereotype.Repository
+import org.springframework.data.repository.Repository
 
-@Repository
-interface CommentJpaRepository : JpaRepository<CommentEntity, Long>
+
+interface CommentJpaRepository : Repository<CommentEntity, Long> {
+    fun save(commentEntity: CommentEntity): CommentEntity
+    fun findById(id: Long): CommentEntity?
+}

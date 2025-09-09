@@ -7,19 +7,14 @@ import org.springframework.stereotype.Repository
 @Repository
 class CommentRepository(
     private val commentJpaRepository: CommentJpaRepository,
-) : QuerydslRepositorySupport(CommentEntity::class.java) {
-
-    fun save(commentEntity: CommentEntity): CommentEntity = commentJpaRepository.save(commentEntity)
-
-    fun findById(id: Long): CommentEntity? = commentJpaRepository.findById(id).orElse(null)
+) : QuerydslRepositorySupport(CommentEntity::class.java),
+    CommentJpaRepository by commentJpaRepository {
 
     fun findByFeedIdAndCursorAndLimit(
         feedId: Long,
         cursor: Long?,
         limit: Long,
     ): List<CommentEntity> {
-        val c = QCommentEntity.commentEntity
-
         val whereClause = BooleanBuilder().apply {
             and(c.feedId.eq(feedId))
             and(c.deletedAt.isNull)
@@ -32,5 +27,9 @@ class CommentRepository(
             .limit(limit + 1)
             .orderBy(c.id.desc())
             .fetch()
+    }
+
+    companion object {
+        private val c = QCommentEntity.commentEntity
     }
 }
