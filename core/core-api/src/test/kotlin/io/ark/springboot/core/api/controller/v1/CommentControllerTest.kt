@@ -3,11 +3,9 @@ package io.ark.springboot.core.api.controller.v1
 import io.ark.springboot.core.domain.feed.comment.Comment
 import io.ark.springboot.core.domain.feed.comment.CommentData
 import io.ark.springboot.core.domain.feed.comment.CommentService
-import io.ark.springboot.core.enums.feed.FeedStatus
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
-import io.ark.springboot.test.api.dsl.BOOLEAN
 import io.ark.springboot.test.api.dsl.DATETIME
 import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.OBJECT
