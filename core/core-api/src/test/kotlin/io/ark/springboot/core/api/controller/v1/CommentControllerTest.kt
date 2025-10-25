@@ -6,7 +6,6 @@ import io.ark.springboot.core.domain.feed.comment.CommentService
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
-import io.ark.springboot.test.api.dsl.DATETIME
 import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.OBJECT
 import io.ark.springboot.test.api.dsl.STRING
@@ -104,13 +103,7 @@ class CommentControllerTest : RestDocsTest() {
                         ),
                         responseFields(
                             "result" type STRING means "응답 결과",
-                            "data.id" type NUMBER means "댓글 ID",
-                            "data.content" type STRING means "댓글 내용",
-                            "data.authorId" type NUMBER means "작성자 ID",
-                            "data.feedId" type NUMBER means "피드 ID",
-                            "data.parentCommentId" type NUMBER means "부모 댓글 ID" isOptional true,
-                            "data.createdAt" type DATETIME means "생성일시",
-                            "data.updatedAt" type DATETIME means "수정일시",
+                            "data" type NUMBER means "생성된 댓글 ID",
                             "error" type STRING isIgnored true,
                         ),
                     ),
@@ -160,13 +153,7 @@ class CommentControllerTest : RestDocsTest() {
                         ),
                         responseFields(
                             "result" type STRING means "응답 결과",
-                            "data.id" type NUMBER means "댓글 ID",
-                            "data.content" type STRING means "댓글 내용",
-                            "data.authorId" type NUMBER means "작성자 ID",
-                            "data.feedId" type NUMBER means "피드 ID",
-                            "data.parentCommentId" type NUMBER means "부모 댓글 ID" isOptional true,
-                            "data.createdAt" type DATETIME means "생성일시",
-                            "data.updatedAt" type DATETIME means "수정일시",
+                            "data" type NUMBER means "수정된 댓글 ID",
                             "error" type STRING isIgnored true,
                         ),
                     ),
