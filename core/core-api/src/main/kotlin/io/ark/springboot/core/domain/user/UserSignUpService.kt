@@ -1,17 +1,16 @@
 package io.ark.springboot.core.domain.user
 
 import io.ark.springboot.core.domain.user.storage.UserStorage
-import io.ark.springboot.core.domain.user.validator.PasswordValidator
+import io.ark.springboot.core.domain.user.validator.PasswordProcessor
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class UserSignUpService(
     private val userStorage: UserStorage,
-    private val passwordValidator: PasswordValidator,
+    private val passwordValidator: PasswordProcessor,
 ) {
     @Transactional
     fun signUp(userData: UserData): User {

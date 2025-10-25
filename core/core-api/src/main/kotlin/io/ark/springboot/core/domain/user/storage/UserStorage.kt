@@ -2,12 +2,12 @@ package io.ark.springboot.core.domain.user.storage
 
 import io.ark.springboot.core.domain.user.User
 import io.ark.springboot.core.domain.user.UserData
+import io.ark.springboot.core.domain.user.validator.PasswordProcessor
 import io.ark.springboot.core.enums.user.UserStatus
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.user.UserEntity
 import io.ark.springboot.storage.db.core.user.UserRepository
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class UserStorage(
     private val userRepository: UserRepository,
-    private val passwordEncoder: PasswordEncoder,
+    private val passwordProcessor: PasswordProcessor,
 ) {
     @Transactional
     fun save(userData: UserData): User {
@@ -73,7 +73,7 @@ class UserStorage(
     private fun UserData.toUserEntity() = UserEntity(
         email = email,
         username = username,
-        encodedPassword = passwordEncoder.encode(this.password),
+        encodedPassword = passwordProcessor.encode(this.password),
         name = name,
     )
 

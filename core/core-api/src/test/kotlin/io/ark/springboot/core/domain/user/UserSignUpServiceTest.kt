@@ -1,7 +1,7 @@
 package io.ark.springboot.core.domain.user
 
 import io.ark.springboot.core.domain.user.storage.UserStorage
-import io.ark.springboot.core.domain.user.validator.PasswordValidator
+import io.ark.springboot.core.domain.user.validator.PasswordProcessor
 import io.ark.springboot.core.support.error.CoreException
 import io.mockk.every
 import io.mockk.mockk
@@ -10,19 +10,18 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.security.crypto.password.PasswordEncoder
 
 class UserSignUpServiceTest {
 
     private lateinit var userStorage: UserStorage
-    private lateinit var passwordValidator: PasswordValidator
+    private lateinit var passwordProcessor: PasswordProcessor
     private lateinit var userSignUpService: UserSignUpService
 
     @BeforeEach
     fun setUp() {
         userStorage = mockk()
-        passwordValidator = mockk(relaxed = true)
-        userSignUpService = UserSignUpService(userStorage, passwordValidator)
+        passwordProcessor = mockk(relaxed = true)
+        userSignUpService = UserSignUpService(userStorage, passwordProcessor)
     }
 
     @Test

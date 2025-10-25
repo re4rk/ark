@@ -38,6 +38,7 @@ enum class ErrorType(val status: HttpStatus, val code: ErrorCode, val message: S
     PASSWORD_NO_LETTER(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_NO_LETTER, "비밀번호에 영문자가 포함되어야 합니다.", LogLevel.WARN),
     PASSWORD_NO_DIGIT(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_NO_DIGIT, "비밀번호에 숫자가 포함되어야 합니다.", LogLevel.WARN),
     PASSWORD_NO_SPECIAL(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_NO_SPECIAL, "비밀번호에 특수문자가 포함되어야 합니다.", LogLevel.WARN),
+    PASSWORD_INVALID(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_INVALID, "비밀번호가 올바르지 않습니다.", LogLevel.WARN),
 
     // 검증 오류
     INVALID_FEED_ID(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_FEED_ID, "유효하지 않은 피드 ID입니다.", LogLevel.WARN),

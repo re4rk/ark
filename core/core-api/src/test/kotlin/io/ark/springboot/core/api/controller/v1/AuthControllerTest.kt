@@ -2,6 +2,7 @@ package io.ark.springboot.core.api.controller.v1
 
 import io.ark.springboot.core.api.controller.v1.request.SignUpRequest
 import io.ark.springboot.core.domain.user.User
+import io.ark.springboot.core.domain.user.UserLoginService
 import io.ark.springboot.core.domain.user.UserSignUpService
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
@@ -22,12 +23,14 @@ import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document
 class AuthControllerTest : RestDocsTest() {
 
     private lateinit var userSignUpService: UserSignUpService
+    private lateinit var userLoginService: UserLoginService
     private lateinit var controller: AuthController
 
     @BeforeEach
     fun setUp() {
         userSignUpService = mockk()
-        controller = AuthController(userSignUpService)
+        userLoginService = mockk()
+        controller = AuthController(userSignUpService, userLoginService)
         mockMvc = mockController(controller)
     }
 
