@@ -1,0 +1,70 @@
+
+###
+POST http://localhost:8080/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "email" : "test@gmail.com",
+  "username" : "test",
+  "password" : "!@#123qwe",
+  "name" : "테스터"
+}
+
+###
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email" : "test@gmail.com",
+  "password" : "!@#123qwe"
+}
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+
+    client.global.set("accessToken", response.body.data.accessToken);
+    client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+
+###
+POST http://localhost:8080/api/v1/auth/token/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+###
+GET http://localhost:8080/api/v1/auth/me
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Validate", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
+POST http://localhost:8080/api/v1/auth/password/change
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "password": "!@#123qwe",
+  "newPassword": "!@#123qweasdzxc"
+}
+
+> {%
+  client.test("Validate", function () {
+    client.assert(response.status === 200, "Response status is not 200");
+  });
+%}

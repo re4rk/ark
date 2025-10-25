@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.logging.LogLevel
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
@@ -39,6 +40,7 @@ class ApiControllerAdvice {
                 )
                 return handleCoreException(CoreException(ErrorType.INVALID_ENUM_VALUE, errorData))
             }
+
             else -> {
                 // JSON 파싱 오류 등
                 val errorData = mapOf(
@@ -48,6 +50,15 @@ class ApiControllerAdvice {
                 return handleCoreException(CoreException(ErrorType.INVALID_REQUEST_FORMAT, errorData))
             }
         }
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleMethodArgumentNotValidException(e: MethodArgumentNotValidException): ResponseEntity<ApiResponse<Any>> {
+        val errorData = mutableMapOf<String, Any?>()
+        e.bindingResult.fieldErrors.forEach {
+            errorData[it.field] = it.defaultMessage
+        }
+        return handleCoreException(CoreException(ErrorType.INVALID_REQUEST_FORMAT, errorData))
     }
 
     @ExceptionHandler(Exception::class)

@@ -1,6 +1,9 @@
 package io.ark.springboot.core.support.error
 
 enum class ErrorCode {
+    E500,
+
+    // 파일 관련 오류
     FILE_UNSUPPORTED_TYPE,
     FILE_SIZE_EXCEEDED,
     FILE_MISSING,
@@ -10,14 +13,38 @@ enum class ErrorCode {
     FILE_UPLOAD_ERROR,
     FILE_DOWNLOAD_ERROR,
     FILE_TOO_MANY_UPLOADS,
+
+    // 피드 관련 오류
     FEED_NOT_FOUND,
+
+    // 댓글 관련 오류
     COMMENT_NOT_FOUND,
+
+    // 콘텐츠 검증 오류
     CONTENT_INVALID_LENGTH, // 콘텐츠 길이 오류
     CONTENT_BANNED_WORD, // 금지어 포함 오류
+
+    // 사용자 관련 오류
+    USER_NOT_FOUND,
+    USER_EMAIL_ALREADY_EXISTS,
+    USER_USERNAME_ALREADY_EXISTS,
+
+    // 사용자 비밀번호 관련 오류
+    PASSWORD_TOO_SHORT,
+    PASSWORD_TOO_LONG,
+    PASSWORD_NO_LETTER,
+    PASSWORD_NO_DIGIT,
+    PASSWORD_NO_SPECIAL,
+    PASSWORD_INVALID,
+
+    // 검증 오류
     INVALID_FEED_ID,
     INVALID_AUTHOR_ID,
     INVALID_ENUM_VALUE,
     VALIDATION_ERROR,
     INVALID_REQUEST_FORMAT,
-    E500,
+
+    // 토큰 관련 오류
+    INVALID_TOKEN,
+    EXPIRED_TOKEN,
 }

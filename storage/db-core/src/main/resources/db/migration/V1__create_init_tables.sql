@@ -58,3 +58,22 @@ CREATE TABLE IF NOT EXISTS comments (
 ) ENGINE = InnoDB
   DEFAULT CHARACTER SET = utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `users` (
+    `id`                    BIGINT          NOT NULL AUTO_INCREMENT,
+
+    `email`                 VARCHAR(100)    NOT NULL COMMENT '이메일',
+    `username`              VARCHAR(50)     NOT NULL COMMENT '사용자명',
+    `password`              VARCHAR(100)    NOT NULL COMMENT '암호화된 비밀번호',
+    `name`                  VARCHAR(50)     NOT NULL COMMENT '이름',
+    `status`                VARCHAR(32)     NOT NULL COMMENT '사용자 상태 (예: ACTIVE, DELETED, BLOCKED)',
+
+    `created_at`            TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `updated_at`            TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    `deleted_at`            TIMESTAMP(6)    NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_email` (`email`),
+    UNIQUE KEY `uk_username` (`username`),
+    INDEX `idx_email` (`email`),
+    INDEX `idx_username` (`username`)
+) ENGINE = InnoDB
+  DEFAULT CHARACTER SET = utf8mb4;
