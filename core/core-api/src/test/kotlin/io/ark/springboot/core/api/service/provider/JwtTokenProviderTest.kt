@@ -1,4 +1,4 @@
-package io.ark.springboot.core.api.provider
+package io.ark.springboot.core.api.service.provider
 
 import io.ark.springboot.core.api.config.property.JwtProperties
 import io.ark.springboot.core.api.service.provider.JwtTokenProvider

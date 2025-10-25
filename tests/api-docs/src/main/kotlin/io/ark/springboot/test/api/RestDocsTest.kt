@@ -16,12 +16,14 @@ import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder
+import org.springframework.web.method.support.HandlerMethodArgumentResolver
 
 @Tag("restdocs")
 @ExtendWith(RestDocumentationExtension::class)
 abstract class RestDocsTest {
     lateinit var mockMvc: MockMvcRequestSpecification
     private lateinit var restDocumentation: RestDocumentationContextProvider
+    private var customArgumentResolvers: List<HandlerMethodArgumentResolver> = emptyList()
 
     @BeforeEach
     fun setUp(restDocumentation: RestDocumentationContextProvider) {
@@ -38,12 +40,20 @@ abstract class RestDocsTest {
             .mockMvc(mockMvc)
     }
 
+    protected fun mockController(controller: Any, vararg resolvers: HandlerMethodArgumentResolver): MockMvcRequestSpecification {
+        customArgumentResolvers = resolvers.toList()
+        val mockMvc = createMockMvc(controller)
+        return RestAssuredMockMvc.given()
+            .mockMvc(mockMvc)
+    }
+
     private fun createMockMvc(controller: Any): MockMvc {
         val converter = MappingJackson2HttpMessageConverter(objectMapper())
 
         return MockMvcBuilders.standaloneSetup(controller)
             .apply<StandaloneMockMvcBuilder>(MockMvcRestDocumentation.documentationConfiguration(restDocumentation))
             .setMessageConverters(converter, ByteArrayHttpMessageConverter())
+            .setCustomArgumentResolvers(*customArgumentResolvers.toTypedArray())
             .build()
     }
 

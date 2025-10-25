@@ -1,13 +1,17 @@
 package io.ark.springboot.core.api.controller.v1
 
 import io.ark.springboot.core.api.controller.v1.request.TokenValidationRequest
+import io.ark.springboot.core.api.dto.UserPrincipal
 import io.ark.springboot.core.api.service.AuthApiService
 import io.ark.springboot.core.api.service.request.LoginRequest
 import io.ark.springboot.core.api.service.request.SignUpRequest
+import io.ark.springboot.core.api.service.request.UserPasswordChangeRequest
 import io.ark.springboot.core.api.service.response.LoginResponse
+import io.ark.springboot.core.domain.user.User
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
+import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.STRING
 import io.ark.springboot.test.api.dsl.requestFields
 import io.ark.springboot.test.api.dsl.responseFields
@@ -15,10 +19,20 @@ import io.ark.springboot.test.api.dsl.type
 import io.mockk.every
 import io.mockk.mockk
 import io.restassured.http.ContentType
+import io.restassured.module.mockmvc.specification.MockMvcRequestSpecification
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.core.MethodParameter
 import org.springframework.http.HttpStatus
 import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.bind.support.WebDataBinderFactory
+import org.springframework.web.context.request.NativeWebRequest
+import org.springframework.web.method.support.HandlerMethodArgumentResolver
+import org.springframework.web.method.support.ModelAndViewContainer
 
 class AuthControllerTest : RestDocsTest() {
 
@@ -29,7 +43,28 @@ class AuthControllerTest : RestDocsTest() {
     fun setUp() {
         authApiService = mockk()
         controller = AuthController(authApiService)
-        mockMvc = mockController(controller)
+        mockMvc = mockControllerWithAuth(controller)
+    }
+
+    private fun mockControllerWithAuth(controller: Any): MockMvcRequestSpecification {
+        val user = User(
+            id = 1L,
+            email = "test@example.com",
+            username = "testuser",
+            encodedPassword = "encoded_password",
+            name = "테스트 사용자",
+        )
+        val userPrincipal = UserPrincipal.from(user)
+
+        val authentication = UsernamePasswordAuthenticationToken(
+            userPrincipal,
+            null,
+            listOf(SimpleGrantedAuthority("ROLE_USER")),
+        )
+
+        SecurityContextHolder.getContext().authentication = authentication
+
+        return mockController(controller, TestUserPrincipalResolver())
     }
 
     @Test
@@ -65,6 +100,30 @@ class AuthControllerTest : RestDocsTest() {
                     responseFields(
                         "result" type STRING means "응답 결과",
                         "data" type STRING isIgnored true,
+                        "error" type STRING isIgnored true,
+                    ),
+                ),
+            )
+    }
+
+    @Test
+    fun `현재 사용자 정보 조회 성공`() {
+        // when & then
+        given()
+            .get("/api/v1/auth/me")
+            .then()
+            .status(HttpStatus.OK)
+            .apply(
+                document(
+                    "auth-me-success",
+                    requestPreprocessor(),
+                    responsePreprocessor(),
+                    responseFields(
+                        "result" type STRING means "응답 결과",
+                        "data.id" type NUMBER means "사용자 ID",
+                        "data.email" type STRING means "이메일",
+                        "data.name" type STRING means "이름",
+                        "data.userName" type STRING means "사용자명",
                         "error" type STRING isIgnored true,
                     ),
                 ),
@@ -153,5 +212,56 @@ class AuthControllerTest : RestDocsTest() {
                     ),
                 ),
             )
+    }
+
+    @Test
+    fun `비밀번호 변경 성공`() {
+        // given
+        val request = UserPasswordChangeRequest(
+            password = "old_password",
+            newPassword = "new_password123",
+        )
+
+        every { authApiService.changePassword(any(), any()) } returns Unit
+
+        // when & then
+        given()
+            .contentType(ContentType.JSON)
+            .body(request)
+            .post("/api/v1/auth/password/change")
+            .then()
+            .status(HttpStatus.OK)
+            .apply(
+                document(
+                    "auth-change-password-success",
+                    requestPreprocessor(),
+                    responsePreprocessor(),
+                    requestFields(
+                        "password" type STRING means "현재 비밀번호",
+                        "newPassword" type STRING means "새 비밀번호",
+                    ),
+                    responseFields(
+                        "result" type STRING means "응답 결과",
+                        "data" type STRING isIgnored true,
+                        "error" type STRING isIgnored true,
+                    ),
+                ),
+            )
+    }
+}
+
+class TestUserPrincipalResolver : HandlerMethodArgumentResolver {
+    override fun supportsParameter(parameter: MethodParameter): Boolean {
+        return parameter.parameterType.simpleName == "UserPrincipal"
+    }
+
+    override fun resolveArgument(
+        parameter: MethodParameter,
+        mavContainer: ModelAndViewContainer?,
+        webRequest: NativeWebRequest,
+        binderFactory: WebDataBinderFactory?,
+    ): Any? {
+        val authentication: Authentication? = SecurityContextHolder.getContext().authentication
+        return authentication?.principal
     }
 }
