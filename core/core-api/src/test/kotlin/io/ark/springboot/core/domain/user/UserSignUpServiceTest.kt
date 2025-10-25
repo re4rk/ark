@@ -1,6 +1,7 @@
 package io.ark.springboot.core.domain.user
 
 import io.ark.springboot.core.domain.user.storage.UserStorage
+import io.ark.springboot.core.domain.user.validator.PasswordValidator
 import io.ark.springboot.core.support.error.CoreException
 import io.mockk.every
 import io.mockk.mockk
@@ -15,13 +16,15 @@ class UserSignUpServiceTest {
 
     private lateinit var userStorage: UserStorage
     private lateinit var passwordEncoder: PasswordEncoder
+    private lateinit var passwordValidator: PasswordValidator
     private lateinit var userSignUpService: UserSignUpService
 
     @BeforeEach
     fun setUp() {
         userStorage = mockk()
         passwordEncoder = mockk()
-        userSignUpService = UserSignUpService(userStorage, passwordEncoder)
+        passwordValidator = mockk(relaxed = true)
+        userSignUpService = UserSignUpService(userStorage, passwordEncoder, passwordValidator)
     }
 
     @Test

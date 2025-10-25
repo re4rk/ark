@@ -1,6 +1,7 @@
 package io.ark.springboot.core.domain.user
 
 import io.ark.springboot.core.domain.user.storage.UserStorage
+import io.ark.springboot.core.domain.user.validator.PasswordValidator
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional
 class UserSignUpService(
     private val userStorage: UserStorage,
     private val passwordEncoder: PasswordEncoder,
+    private val passwordValidator: PasswordValidator,
 ) {
     @Transactional
     fun signUp(userData: UserData): User {
@@ -21,6 +23,8 @@ class UserSignUpService(
         if (userStorage.existsByUsername(userData.username)) {
             throw CoreException(ErrorType.USER_USERNAME_ALREADY_EXISTS)
         }
+
+        passwordValidator.validate(userData.password)
 
         val encodedPassword = passwordEncoder.encode(userData.password)
         val formattedUserData = userData.copy(password = encodedPassword)

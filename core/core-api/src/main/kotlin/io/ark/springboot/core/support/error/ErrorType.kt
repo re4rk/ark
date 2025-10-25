@@ -32,6 +32,13 @@ enum class ErrorType(val status: HttpStatus, val code: ErrorCode, val message: S
     USER_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, ErrorCode.USER_EMAIL_ALREADY_EXISTS, "이미 존재하는 이메일입니다.", LogLevel.WARN),
     USER_USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, ErrorCode.USER_USERNAME_ALREADY_EXISTS, "이미 존재하는 사용자명입니다.", LogLevel.WARN),
 
+    // 사용자 비밀번호 관련 오류
+    PASSWORD_TOO_SHORT(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_TOO_SHORT, "비밀번호는 최소 8자 이상이어야 합니다.", LogLevel.WARN),
+    PASSWORD_TOO_LONG(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_TOO_LONG, "비밀번호는 최대 128자 이하여야 합니다.", LogLevel.WARN),
+    PASSWORD_NO_LETTER(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_NO_LETTER, "비밀번호에 영문자가 포함되어야 합니다.", LogLevel.WARN),
+    PASSWORD_NO_DIGIT(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_NO_DIGIT, "비밀번호에 숫자가 포함되어야 합니다.", LogLevel.WARN),
+    PASSWORD_NO_SPECIAL(HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_NO_SPECIAL, "비밀번호에 특수문자가 포함되어야 합니다.", LogLevel.WARN),
+
     // 검증 오류
     INVALID_FEED_ID(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_FEED_ID, "유효하지 않은 피드 ID입니다.", LogLevel.WARN),
     INVALID_AUTHOR_ID(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_AUTHOR_ID, "유효하지 않은 작성자 ID입니다.", LogLevel.WARN),

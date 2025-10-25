@@ -77,5 +77,4 @@ class AuthControllerTest : RestDocsTest() {
                 ),
             )
     }
-
 }
