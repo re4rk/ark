@@ -1,7 +1,7 @@
-package io.ark.springboot.core.api.provider
+package io.ark.springboot.core.api.service.provider
 
-import io.ark.springboot.core.api.provider.dto.AccessTokenClaims
-import io.ark.springboot.core.api.provider.dto.RefreshTokenClaims
+import io.ark.springboot.core.api.dto.AccessTokenClaims
+import io.ark.springboot.core.api.dto.RefreshTokenClaims
 
 interface TokenProvider {
     fun generateAccessToken(userId: Long): String

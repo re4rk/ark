@@ -1,4 +1,4 @@
-package io.ark.springboot.core.api.provider.dto
+package io.ark.springboot.core.api.dto
 
 data class AccessTokenClaims(
     val userId: Long,

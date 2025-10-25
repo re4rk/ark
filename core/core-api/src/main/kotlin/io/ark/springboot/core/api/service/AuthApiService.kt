@@ -4,7 +4,7 @@ import io.ark.springboot.core.api.controller.v1.request.LoginRequest
 import io.ark.springboot.core.api.controller.v1.request.SignUpRequest
 import io.ark.springboot.core.api.controller.v1.request.TokenValidationRequest
 import io.ark.springboot.core.api.controller.v1.response.LoginResponse
-import io.ark.springboot.core.api.provider.TokenProvider
+import io.ark.springboot.core.api.service.provider.TokenProvider
 import io.ark.springboot.core.domain.user.UserLoginService
 import io.ark.springboot.core.domain.user.UserSignUpService
 import org.springframework.stereotype.Service

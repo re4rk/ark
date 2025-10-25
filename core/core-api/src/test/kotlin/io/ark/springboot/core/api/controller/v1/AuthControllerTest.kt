@@ -8,7 +8,6 @@ import io.ark.springboot.core.api.service.AuthApiService
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
-import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.STRING
 import io.ark.springboot.test.api.dsl.requestFields
 import io.ark.springboot.test.api.dsl.responseFields
