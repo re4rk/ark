@@ -20,6 +20,12 @@ class DefaultPasswordProcessor(
             throw CoreException(ErrorType.PASSWORD_TOO_LONG)
         }
 
+        // 허용된 문자만 포함하는지 검증 (영문자, 숫자, 특수문자만 허용)
+        val allowedPattern = Regex("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{};':\",./<>?`~|\\\\]+$")
+        if (!password.matches(allowedPattern)) {
+            throw CoreException(ErrorType.PASSWORD_INVALID)
+        }
+
         // 영문자 포함 검증
         if (!password.any { it.isLetter() }) {
             throw CoreException(ErrorType.PASSWORD_NO_LETTER)

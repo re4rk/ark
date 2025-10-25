@@ -46,4 +46,8 @@ enum class ErrorType(val status: HttpStatus, val code: ErrorCode, val message: S
     INVALID_ENUM_VALUE(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_ENUM_VALUE, "잘못된 값이 입력되었습니다.", LogLevel.WARN),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "입력값이 올바르지 않습니다.", LogLevel.WARN),
     INVALID_REQUEST_FORMAT(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "요청 형식이 올바르지 않습니다.", LogLevel.WARN),
+
+    // 토큰 관련 오류
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_TOKEN, "유효하지 않은 토큰입니다.", LogLevel.WARN),
+    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, ErrorCode.EXPIRED_TOKEN, "만료된 토큰입니다.", LogLevel.WARN),
 }

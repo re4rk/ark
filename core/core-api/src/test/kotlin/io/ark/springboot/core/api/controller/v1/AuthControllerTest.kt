@@ -1,9 +1,10 @@
 package io.ark.springboot.core.api.controller.v1
 
+import io.ark.springboot.core.api.controller.v1.request.LoginRequest
 import io.ark.springboot.core.api.controller.v1.request.SignUpRequest
-import io.ark.springboot.core.domain.user.User
-import io.ark.springboot.core.domain.user.UserLoginService
-import io.ark.springboot.core.domain.user.UserSignUpService
+import io.ark.springboot.core.api.controller.v1.request.TokenValidationRequest
+import io.ark.springboot.core.api.controller.v1.response.LoginResponse
+import io.ark.springboot.core.api.service.AuthApiService
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
@@ -22,15 +23,13 @@ import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document
 
 class AuthControllerTest : RestDocsTest() {
 
-    private lateinit var userSignUpService: UserSignUpService
-    private lateinit var userLoginService: UserLoginService
+    private lateinit var authApiService: AuthApiService
     private lateinit var controller: AuthController
 
     @BeforeEach
     fun setUp() {
-        userSignUpService = mockk()
-        userLoginService = mockk()
-        controller = AuthController(userSignUpService, userLoginService)
+        authApiService = mockk()
+        controller = AuthController(authApiService)
         mockMvc = mockController(controller)
     }
 
@@ -44,15 +43,7 @@ class AuthControllerTest : RestDocsTest() {
             name = "테스트 사용자",
         )
 
-        val user = User(
-            id = 1L,
-            email = request.email,
-            username = request.username,
-            name = request.name,
-            encodedPassword = "hashed_password",
-        )
-
-        every { userSignUpService.signUp(any()) } returns user
+        every { authApiService.signUp(any()) } returns Unit
 
         // when & then
         given()
@@ -74,7 +65,91 @@ class AuthControllerTest : RestDocsTest() {
                     ),
                     responseFields(
                         "result" type STRING means "응답 결과",
-                        "data" type NUMBER means "생성된 사용자 ID",
+                        "data" type STRING isIgnored true,
+                        "error" type STRING isIgnored true,
+                    ),
+                ),
+            )
+    }
+
+    @Test
+    fun `로그인 성공`() {
+        // given
+        val request = LoginRequest(
+            email = "test@example.com",
+            password = "password123",
+        )
+
+        val loginResponse = LoginResponse(
+            accessToken = "access_token_here",
+            refreshToken = "refresh_token_here",
+            tokenType = "Bearer",
+        )
+
+        every { authApiService.login(any()) } returns loginResponse
+
+        // when & then
+        given()
+            .contentType(ContentType.JSON)
+            .body(request)
+            .post("/api/v1/auth/login")
+            .then()
+            .status(HttpStatus.OK)
+            .apply(
+                document(
+                    "auth-login-success",
+                    requestPreprocessor(),
+                    responsePreprocessor(),
+                    requestFields(
+                        "email" type STRING means "이메일",
+                        "password" type STRING means "비밀번호",
+                    ),
+                    responseFields(
+                        "result" type STRING means "응답 결과",
+                        "data.accessToken" type STRING means "액세스 토큰",
+                        "data.refreshToken" type STRING means "갱신 토큰",
+                        "data.tokenType" type STRING means "토큰 타입",
+                        "error" type STRING isIgnored true,
+                    ),
+                ),
+            )
+    }
+
+    @Test
+    fun `토큰 갱신 성공`() {
+        // given
+        val request = TokenValidationRequest(
+            refreshToken = "refresh_token_here",
+        )
+
+        val loginResponse = LoginResponse(
+            accessToken = "new_access_token_here",
+            refreshToken = "new_refresh_token_here",
+            tokenType = "Bearer",
+        )
+
+        every { authApiService.refreshToken(any()) } returns loginResponse
+
+        // when & then
+        given()
+            .contentType(ContentType.JSON)
+            .body(request)
+            .post("/api/v1/auth/token/refresh")
+            .then()
+            .status(HttpStatus.OK)
+            .apply(
+                document(
+                    "auth-refresh-token-success",
+                    requestPreprocessor(),
+                    responsePreprocessor(),
+                    requestFields(
+                        "refreshToken" type STRING means "갱신 토큰",
+                    ),
+                    responseFields(
+                        "result" type STRING means "응답 결과",
+                        "data.accessToken" type STRING means "액세스 토큰",
+                        "data.refreshToken" type STRING means "갱신 토큰",
+                        "data.tokenType" type STRING means "토큰 타입",
                         "error" type STRING isIgnored true,
                     ),
                 ),

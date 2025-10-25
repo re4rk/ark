@@ -43,4 +43,8 @@ enum class ErrorCode {
     INVALID_ENUM_VALUE,
     VALIDATION_ERROR,
     INVALID_REQUEST_FORMAT,
+
+    // 토큰 관련 오류
+    INVALID_TOKEN,
+    EXPIRED_TOKEN,
 }
