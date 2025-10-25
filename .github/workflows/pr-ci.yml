@@ -29,7 +29,9 @@ jobs:
 
       - name: Get Gradle version
         id: gradle-version
-        run: echo "version=$(./gradlew --version | grep "Gradle" | cut -d' ' -f2)" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(./gradlew --version | grep "Gradle" | cut -d' ' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
