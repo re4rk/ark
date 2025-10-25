@@ -46,7 +46,7 @@ class AuthControllerTest : RestDocsTest() {
             email = request.email,
             username = request.username,
             name = request.name,
-            password = "hashed_password",
+            encodedPassword = "hashed_password",
         )
 
         every { userSignUpService.signUp(any()) } returns user

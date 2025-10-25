@@ -15,16 +15,14 @@ import org.springframework.security.crypto.password.PasswordEncoder
 class UserSignUpServiceTest {
 
     private lateinit var userStorage: UserStorage
-    private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var passwordValidator: PasswordValidator
     private lateinit var userSignUpService: UserSignUpService
 
     @BeforeEach
     fun setUp() {
         userStorage = mockk()
-        passwordEncoder = mockk()
         passwordValidator = mockk(relaxed = true)
-        userSignUpService = UserSignUpService(userStorage, passwordEncoder, passwordValidator)
+        userSignUpService = UserSignUpService(userStorage, passwordValidator)
     }
 
     @Test
@@ -39,12 +37,11 @@ class UserSignUpServiceTest {
 
         every { userStorage.existsByEmail(userData.email) } returns false
         every { userStorage.existsByUsername(userData.username) } returns false
-        every { passwordEncoder.encode(userData.password) } returns "encodedPassword"
         every { userStorage.save(any()) } returns mockk {
             every { id } returns 1L
             every { email } returns userData.email
             every { username } returns userData.username
-            every { password } returns "encodedPassword"
+            every { encodedPassword } returns "encodedPassword"
             every { name } returns userData.name
         }
 
@@ -58,7 +55,6 @@ class UserSignUpServiceTest {
 
         verify { userStorage.existsByEmail(userData.email) }
         verify { userStorage.existsByUsername(userData.username) }
-        verify { passwordEncoder.encode(userData.password) }
         verify { userStorage.save(any()) }
     }
 

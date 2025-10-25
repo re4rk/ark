@@ -19,7 +19,7 @@ class UserEntity(
     var username: String,
 
     @Column(nullable = false, name = "password")
-    var password: String,
+    var encodedPassword: String,
 
     @Column(nullable = false, name = "name")
     var name: String,

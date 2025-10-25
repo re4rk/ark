@@ -7,6 +7,7 @@ import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.user.UserEntity
 import io.ark.springboot.storage.db.core.user.UserRepository
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,11 +15,11 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class UserStorage(
     private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder,
 ) {
     @Transactional
     fun save(userData: UserData): User {
-        val entity = userData.toUserEntity()
-        return userRepository.save(entity).toUser()
+        return userRepository.save(userData.toUserEntity()).toUser()
     }
 
     fun getUser(id: Long): User {
@@ -51,8 +52,11 @@ class UserStorage(
 
         userEntity.email = userData.email
         userEntity.username = userData.username
-        userEntity.password = userData.password
         userEntity.name = userData.name
+
+        if (userEntity.encodedPassword != userData.password) {
+            userEntity.encodedPassword = userData.password
+        }
 
         return userRepository.save(userEntity).toUser()
     }
@@ -66,19 +70,19 @@ class UserStorage(
         userEntity.deletedAt = java.time.LocalDateTime.now()
     }
 
+    private fun UserData.toUserEntity() = UserEntity(
+        email = email,
+        username = username,
+        encodedPassword = passwordEncoder.encode(this.password),
+        name = name,
+    )
+
     companion object {
         private fun UserEntity.toUser() = User(
             id = id,
             email = email,
             username = username,
-            password = password,
-            name = name,
-        )
-
-        private fun UserData.toUserEntity() = UserEntity(
-            email = email,
-            username = username,
-            password = password,
+            encodedPassword = encodedPassword,
             name = name,
         )
     }

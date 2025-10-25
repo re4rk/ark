@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserSignUpService(
     private val userStorage: UserStorage,
-    private val passwordEncoder: PasswordEncoder,
     private val passwordValidator: PasswordValidator,
 ) {
     @Transactional
@@ -26,8 +25,6 @@ class UserSignUpService(
 
         passwordValidator.validate(userData.password)
 
-        val encodedPassword = passwordEncoder.encode(userData.password)
-        val formattedUserData = userData.copy(password = encodedPassword)
-        return userStorage.save(formattedUserData)
+        return userStorage.save(userData)
     }
 }
