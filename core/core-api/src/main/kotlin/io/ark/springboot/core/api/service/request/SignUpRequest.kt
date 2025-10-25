@@ -1,4 +1,4 @@
-package io.ark.springboot.core.api.controller.v1.request
+package io.ark.springboot.core.api.service.request
 
 import io.ark.springboot.core.domain.user.UserData
 import jakarta.validation.constraints.Email

@@ -52,3 +52,19 @@ Authorization: Bearer {{accessToken}}
         client.assert(response.status === 200, "Response status is not 200");
     });
 %}
+
+###
+POST http://localhost:8080/api/v1/auth/password/change
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "password": "!@#123qwe",
+  "newPassword": "!@#123qweasdzxc"
+}
+
+> {%
+  client.test("Validate", function () {
+    client.assert(response.status === 200, "Response status is not 200");
+  });
+%}

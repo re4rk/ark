@@ -1,11 +1,14 @@
 package io.ark.springboot.core.api.service
 
-import io.ark.springboot.core.api.controller.v1.request.LoginRequest
-import io.ark.springboot.core.api.controller.v1.request.SignUpRequest
 import io.ark.springboot.core.api.controller.v1.request.TokenValidationRequest
-import io.ark.springboot.core.api.controller.v1.response.LoginResponse
+import io.ark.springboot.core.api.dto.UserPrincipal
 import io.ark.springboot.core.api.service.provider.TokenProvider
+import io.ark.springboot.core.api.service.request.LoginRequest
+import io.ark.springboot.core.api.service.request.SignUpRequest
+import io.ark.springboot.core.api.service.request.UserPasswordChangeRequest
+import io.ark.springboot.core.api.service.response.LoginResponse
 import io.ark.springboot.core.domain.user.UserLoginService
+import io.ark.springboot.core.domain.user.UserPasswordChangeService
 import io.ark.springboot.core.domain.user.UserSignUpService
 import org.springframework.stereotype.Service
 
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service
 class AuthApiService(
     private val userSignUpService: UserSignUpService,
     private val userLoginService: UserLoginService,
+    private val userPasswordChangeService: UserPasswordChangeService,
     private val tokenProvider: TokenProvider,
 ) {
     fun signUp(request: SignUpRequest) {
@@ -35,5 +39,13 @@ class AuthApiService(
         val refreshToken = tokenProvider.generateRefreshToken(refreshTokenClaims.userId)
 
         return LoginResponse(accessToken = accessToken, refreshToken = refreshToken)
+    }
+
+    fun changePassword(userPrincipal: UserPrincipal, request: UserPasswordChangeRequest) {
+        userPasswordChangeService.changePassword(
+            email = userPrincipal.email,
+            password = request.password,
+            newPassword = request.newPassword,
+        )
     }
 }

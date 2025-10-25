@@ -1,12 +1,13 @@
 package io.ark.springboot.core.api.controller.v1
 
-import io.ark.springboot.core.api.controller.v1.request.LoginRequest
-import io.ark.springboot.core.api.controller.v1.request.SignUpRequest
 import io.ark.springboot.core.api.controller.v1.request.TokenValidationRequest
-import io.ark.springboot.core.api.controller.v1.response.LoginResponse
 import io.ark.springboot.core.api.controller.v1.response.MeResponse
 import io.ark.springboot.core.api.dto.UserPrincipal
 import io.ark.springboot.core.api.service.AuthApiService
+import io.ark.springboot.core.api.service.request.LoginRequest
+import io.ark.springboot.core.api.service.request.SignUpRequest
+import io.ark.springboot.core.api.service.request.UserPasswordChangeRequest
+import io.ark.springboot.core.api.service.response.LoginResponse
 import io.ark.springboot.core.support.response.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -41,5 +42,13 @@ class AuthController(
     @PostMapping("/token/refresh")
     fun refreshToken(@Valid @RequestBody request: TokenValidationRequest): ApiResponse<LoginResponse> {
         return ApiResponse.success(authApiService.refreshToken(request))
+    }
+
+    @PostMapping("/password/change")
+    fun changePassword(
+        @AuthenticationPrincipal userPrincipal: UserPrincipal,
+        @Valid @RequestBody request: UserPasswordChangeRequest,
+    ): ApiResponse<Unit> {
+        return ApiResponse.success(authApiService.changePassword(userPrincipal, request))
     }
 }

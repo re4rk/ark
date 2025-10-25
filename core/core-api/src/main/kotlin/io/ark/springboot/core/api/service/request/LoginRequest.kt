@@ -1,4 +1,4 @@
-package io.ark.springboot.core.api.controller.v1.request
+package io.ark.springboot.core.api.service.request
 
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank

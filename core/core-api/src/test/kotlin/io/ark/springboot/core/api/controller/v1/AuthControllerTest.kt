@@ -1,10 +1,10 @@
 package io.ark.springboot.core.api.controller.v1
 
-import io.ark.springboot.core.api.controller.v1.request.LoginRequest
-import io.ark.springboot.core.api.controller.v1.request.SignUpRequest
 import io.ark.springboot.core.api.controller.v1.request.TokenValidationRequest
-import io.ark.springboot.core.api.controller.v1.response.LoginResponse
 import io.ark.springboot.core.api.service.AuthApiService
+import io.ark.springboot.core.api.service.request.LoginRequest
+import io.ark.springboot.core.api.service.request.SignUpRequest
+import io.ark.springboot.core.api.service.response.LoginResponse
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor

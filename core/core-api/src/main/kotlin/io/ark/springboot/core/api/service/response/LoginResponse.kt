@@ -1,4 +1,4 @@
-package io.ark.springboot.core.api.controller.v1.response
+package io.ark.springboot.core.api.service.response
 
 data class LoginResponse(
     val accessToken: String,
