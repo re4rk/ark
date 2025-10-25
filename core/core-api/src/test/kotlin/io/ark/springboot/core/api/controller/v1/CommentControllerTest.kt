@@ -6,7 +6,6 @@ import io.ark.springboot.core.domain.feed.comment.CommentService
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
-import io.ark.springboot.test.api.dsl.DATETIME
 import io.ark.springboot.test.api.dsl.NUMBER
 import io.ark.springboot.test.api.dsl.OBJECT
 import io.ark.springboot.test.api.dsl.STRING
