@@ -8,8 +8,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-@Transactional(readOnly = true)
-class UserService(
+class UserSignUpService(
     private val userStorage: UserStorage,
     private val passwordEncoder: PasswordEncoder,
 ) {
@@ -26,13 +25,5 @@ class UserService(
         val encodedPassword = passwordEncoder.encode(userData.password)
         val formattedUserData = userData.copy(password = encodedPassword)
         return userStorage.save(formattedUserData)
-    }
-
-    fun findByEmail(email: String): User {
-        return userStorage.getByEmail(email)
-    }
-
-    fun findByUsername(username: String): User {
-        return userStorage.getByUsername(username)
     }
 }

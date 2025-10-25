@@ -1,11 +1,8 @@
 package io.ark.springboot.core.api.controller.v1
 
-import io.ark.springboot.core.api.controller.ApiControllerAdvice
 import io.ark.springboot.core.api.controller.v1.request.SignUpRequest
 import io.ark.springboot.core.domain.user.User
-import io.ark.springboot.core.domain.user.UserService
-import io.ark.springboot.core.support.error.CoreException
-import io.ark.springboot.core.support.error.ErrorType
+import io.ark.springboot.core.domain.user.UserSignUpService
 import io.ark.springboot.test.api.RestDocsTest
 import io.ark.springboot.test.api.RestDocsUtils.requestPreprocessor
 import io.ark.springboot.test.api.RestDocsUtils.responsePreprocessor
@@ -24,13 +21,13 @@ import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document
 
 class AuthControllerTest : RestDocsTest() {
 
-    private lateinit var userService: UserService
+    private lateinit var userSignUpService: UserSignUpService
     private lateinit var controller: AuthController
 
     @BeforeEach
     fun setUp() {
-        userService = mockk()
-        controller = AuthController(userService)
+        userSignUpService = mockk()
+        controller = AuthController(userSignUpService)
         mockMvc = mockController(controller)
     }
 
@@ -52,7 +49,7 @@ class AuthControllerTest : RestDocsTest() {
             password = "hashed_password",
         )
 
-        every { userService.signUp(any()) } returns user
+        every { userSignUpService.signUp(any()) } returns user
 
         // when & then
         given()

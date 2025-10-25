@@ -6,23 +6,22 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.security.crypto.password.PasswordEncoder
 
-class UserServiceTest {
+class UserSignUpServiceTest {
 
     private lateinit var userStorage: UserStorage
     private lateinit var passwordEncoder: PasswordEncoder
-    private lateinit var userService: UserService
+    private lateinit var userSignUpService: UserSignUpService
 
     @BeforeEach
     fun setUp() {
         userStorage = mockk()
         passwordEncoder = mockk()
-        userService = UserService(userStorage, passwordEncoder)
+        userSignUpService = UserSignUpService(userStorage, passwordEncoder)
     }
 
     @Test
@@ -47,7 +46,7 @@ class UserServiceTest {
         }
 
         // when
-        val result = userService.signUp(userData)
+        val result = userSignUpService.signUp(userData)
 
         // then
         assertEquals(userData.email, result.email)
@@ -74,7 +73,7 @@ class UserServiceTest {
 
         // when & then
         val exception = assertThrows<CoreException> {
-            userService.signUp(userData)
+            userSignUpService.signUp(userData)
         }
 
         assertEquals("이미 존재하는 이메일입니다.", exception.message)
@@ -98,7 +97,7 @@ class UserServiceTest {
 
         // when & then
         val exception = assertThrows<CoreException> {
-            userService.signUp(userData)
+            userSignUpService.signUp(userData)
         }
 
         assertEquals("이미 존재하는 사용자명입니다.", exception.message)
