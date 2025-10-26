@@ -19,9 +19,6 @@ jobs:
       - name: Create deployment package
         run: |
           mkdir -p deploy
-          cp -r core/core-api/build/libs/*.jar deploy/
-          cp -r clients/client-example/build/libs/*.jar deploy/
-          cp -r clients/client-s3/build/libs/*.jar deploy/
           cp tools/docker-compose.yml deploy/
           cp tools/* deploy/
 
