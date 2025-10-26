@@ -37,7 +37,7 @@ jobs:
           username: ${{ vars.DEPLOY_USER }}
           key: ${{ secrets.ARK_SSH_KEY }}
           script: |
-            cd /home/ubuntu/ark-deploy
+            cd /home/ubuntu/ark-deploy/deploy
             
             # Pull latest images and restart only changed services
             docker compose pull
