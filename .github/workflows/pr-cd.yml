@@ -2,7 +2,7 @@ name: PR CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, ARK-008 ] # ARK-008은 테스트용 머지전에 삭제
   pull_request:
     branches: [ main ]
     types: [ closed ]
