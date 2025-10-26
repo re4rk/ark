@@ -10,30 +10,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/main'
+    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/ARK-008'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: ${{ runner.os }}-gradle-
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Build application
-        run: ./gradlew build -x test
 
       - name: Create deployment package
         run: |
@@ -41,28 +22,10 @@ jobs:
           cp -r core/core-api/build/libs/*.jar deploy/
           cp -r clients/client-example/build/libs/*.jar deploy/
           cp -r clients/client-s3/build/libs/*.jar deploy/
-          cp docker-compose.yml deploy/
+          cp tools/docker-compose.yml deploy/
+          cp tools/* deploy/
 
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.DEPLOY_HOST }}
-          username: ${{ vars.DEPLOY_USER }}
-          key: ${{ secrets.ARK_SSH_KEY }}
-          script: |
-            # Create deployment directory
-            mkdir -p /home/ubuntu/ark-deploy
-            
-            # Stop existing services
-            cd /home/ubuntu/ark-deploy
-            if [ -f docker-compose.yml ]; then
-              docker-compose down
-            fi
-            
-            # Clean up old files
-            rm -rf /home/ubuntu/ark-deploy/*
-
-      - name: Copy files to server
+      - name: Deploy files to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ vars.DEPLOY_HOST }}
@@ -71,7 +34,7 @@ jobs:
           source: "deploy/*"
           target: "/home/ubuntu/ark-deploy/"
 
-      - name: Start services
+      - name: Update services
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST }}
@@ -80,23 +43,26 @@ jobs:
           script: |
             cd /home/ubuntu/ark-deploy
             
-            # Start services with docker-compose
-            docker-compose up -d --build
+            # Pull latest images and restart only changed services
+            docker compose pull
+            
+            # Restart services (only changed ones will be updated)
+            docker compose up -d
             
             # Wait for services to be ready
-            sleep 30
+            echo "Waiting for services to be ready..."
+            
+            # Wait for MySQL to be ready
+            timeout 60 bash -c 'until docker compose exec mysql mysqladmin ping -h localhost --silent; do sleep 2; done'
+            
+            # Wait for Redis to be ready
+            timeout 30 bash -c 'until docker compose exec redis redis-cli ping | grep -q PONG; do sleep 2; done'
+            
+            # Wait for MinIO to be ready
+            timeout 30 bash -c 'until curl -f http://localhost:9000/minio/health/live >/dev/null 2>&1; do sleep 2; done'
             
             # Check if services are running
-            docker-compose ps
+            docker compose ps
             
             # Health check
             echo "Deployment completed successfully!"
-
-      - name: Notify deployment status
-        if: always()
-        run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ Deployment successful!"
-          else
-            echo "❌ Deployment failed!"
-          fi
