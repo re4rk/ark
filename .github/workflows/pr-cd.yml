@@ -37,7 +37,7 @@ jobs:
           username: ${{ vars.DEPLOY_USER }}
           key: ${{ secrets.ARK_SSH_KEY }}
           script: |
-            cd /home/ubuntu/ark-deploy/deploy
+            cd /home/ubuntu/ark-deploy
             
             # Pull latest images and restart only changed services
             docker compose pull
@@ -49,16 +49,52 @@ jobs:
             echo "Waiting for services to be ready..."
             
             # Wait for MySQL to be ready
-            timeout 60 bash -c 'until docker compose exec mysql mysqladmin ping -h localhost --silent; do sleep 2; done'
+            echo "Waiting for MySQL to be ready..."
+            if ! timeout 60 bash -c 'until docker compose exec mysql mysqladmin ping -h localhost --silent; do sleep 2; done'; then
+              echo "MySQL failed to start within 60 seconds"
+              exit 1
+            fi
+            echo "MySQL is ready!"
             
             # Wait for Redis to be ready
-            timeout 30 bash -c 'until docker compose exec redis redis-cli ping | grep -q PONG; do sleep 2; done'
+            echo "Waiting for Redis to be ready..."
+            if ! timeout 30 bash -c 'until docker compose exec redis redis-cli ping | grep -q PONG; do sleep 2; done'; then
+              echo "Redis failed to start within 30 seconds"
+              exit 1
+            fi
+            echo "Redis is ready!"
             
             # Wait for MinIO to be ready
-            timeout 30 bash -c 'until curl -f http://localhost:9000/minio/health/live >/dev/null 2>&1; do sleep 2; done'
+            echo "Waiting for MinIO to be ready..."
+            if ! timeout 30 bash -c 'until curl -f http://localhost:9000/minio/health/live >/dev/null 2>&1; do sleep 2; done'; then
+              echo "MinIO failed to start within 30 seconds"
+              exit 1
+            fi
+            echo "MinIO is ready!"
             
-            # Check if services are running
+            # Check if all services are running
+            echo "Checking service status..."
             docker compose ps
             
-            # Health check
-            echo "Deployment completed successfully!"
+            # Verify all services are healthy
+            echo "Performing health checks..."
+            
+            # Check MySQL
+            if ! docker compose exec mysql mysqladmin ping -h localhost --silent; then
+              echo "MySQL health check failed"
+              exit 1
+            fi
+            
+            # Check Redis
+            if ! docker compose exec redis redis-cli ping | grep -q PONG; then
+              echo "Redis health check failed"
+              exit 1
+            fi
+            
+            # Check MinIO
+            if ! curl -f http://localhost:9000/minio/health/live >/dev/null 2>&1; then
+              echo "MinIO health check failed"
+              exit 1
+            fi
+            
+            echo "All services are healthy! Deployment completed successfully!"
