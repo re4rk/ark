@@ -19,8 +19,7 @@ jobs:
       - name: Create deployment package
         run: |
           mkdir -p deploy
-          cp tools/docker-compose.yml deploy/
-          cp tools/* deploy/
+          cp -r tools/* deploy/
 
       - name: Deploy files to server
         uses: appleboy/scp-action@v0.1.7
