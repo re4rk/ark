@@ -21,9 +21,9 @@ jobs:
           username: ${{ vars.DEPLOY_USER }}
           key: ${{ secrets.ARK_SSH_KEY }}
           script: |
-            IMAGE_NAME="${{ vars.DOCKER_HUB_USERNAME }}/ark-backend"
+            IMAGE_NAME="${{ vars.DOCKER_HUB_USERNAME }}/ark"
             IMAGE_TAG="${{ github.event.inputs.image_tag || 'latest' }}"
-            CONTAINER_NAME="ark-backend"
+            CONTAINER_NAME="ark"
             NETWORK_NAME="network"
             
             # Login to Docker Hub if needed
