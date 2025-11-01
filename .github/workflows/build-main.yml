@@ -2,8 +2,8 @@ name: Build Main
 
 on:
   push:
-    branches: [ main, ARK-008 ] # main 브랜치에 푸시 시 자동 실행
-  workflow_dispatch: # 수동 실행 가능
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-backend:
@@ -43,6 +43,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

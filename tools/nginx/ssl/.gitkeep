@@ -1,0 +1,8 @@
+# SSL certificates directory
+# Place your SSL certificates here:
+# - cert.pem: SSL certificate
+# - key.pem: SSL private key
+#
+# For development, run: ./generate-self-signed-cert.sh
+# For production, use certificates from a trusted CA (e.g., Let's Encrypt)
+

@@ -6,7 +6,7 @@ on:
 jobs:
   deploy-services:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,6 +33,26 @@ jobs:
           key: ${{ secrets.ARK_SSH_KEY }}
           script: |
             cd /home/ubuntu/ark-deploy/deploy
+            
+            # Generate SSL certificate if not exists
+            SSL_DIR="nginx/ssl"
+            CERT_FILE="${SSL_DIR}/cert.pem"
+            KEY_FILE="${SSL_DIR}/key.pem"
+            
+            if [ ! -f "${CERT_FILE}" ] || [ ! -f "${KEY_FILE}" ]; then
+              echo "SSL certificates not found. Generating self-signed certificate..."
+              mkdir -p "${SSL_DIR}"
+              openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+                -keyout "${KEY_FILE}" \
+                -out "${CERT_FILE}" \
+                -subj "/C=KR/ST=Seoul/L=Seoul/O=ARK/OU=Development/CN=localhost" \
+                -addext "subjectAltName=DNS:localhost,DNS:*.localhost,IP:127.0.0.1"
+              chmod 644 "${CERT_FILE}"
+              chmod 600 "${KEY_FILE}"
+              echo "Self-signed SSL certificate generated successfully!"
+            else
+              echo "SSL certificates already exist. Skipping generation."
+            fi
             
             # Pull latest images and restart only changed services
             docker compose pull
@@ -61,10 +81,10 @@ jobs:
             for s in $services; do
               container=$(docker compose ps -q $s | head -n1)
               [ -z "$container" ] && echo "Error: Service $s container not found" && exit 1
-              
+            
               status=$(docker inspect $container --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
               health=$(docker inspect $container --format '{{.State.Health.Status}}' 2>/dev/null || echo "no-healthcheck")
-              
+            
               if [ "$status" != "running" ]; then
                 echo "Error: Service $s is not running (status: $status)" && exit 1
               fi
@@ -73,4 +93,3 @@ jobs:
               fi
             done
             echo "All services are healthy!"
-
