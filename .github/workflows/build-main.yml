@@ -2,7 +2,7 @@ name: Build Main
 
 on:
   push:
-    branches: [ main, ARK-010 ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -43,7 +43,9 @@ jobs:
         with:
           images: ${{ vars.DOCKER_HUB_USERNAME }}/ark
           tags: |
-            type=raw,value=latest,enable=true
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build Spring Boot JAR
         run: ./gradlew :core:core-api:bootJar --no-daemon --parallel

@@ -27,7 +27,7 @@ spring.config.activate.on-profile: live
 
 storage:
   s3:
-    endpoint: http://minio:9000
+    endpoint: ${s3.endpoint}
     region: ap-northeast-2
     access-key: ${s3.access-key}
     secret-key: ${s3.secret-key}
