@@ -49,7 +49,7 @@ jobs:
             storage.database.core-db.username=${{ vars.MYSQL_USER }}
             storage.database.core-db.password=${{ secrets.MYSQL_PASSWORD }}
             s3.endpoint=${{ vars.MINIO_ENDPOINT }}
-            s3.access-key=${{ var.MINIO_ROOT_USER }}
+            s3.access-key=${{ vars.MINIO_ROOT_USER }}
             s3.secret-key=${{ secrets.MINIO_ROOT_PASSWORD }}
             ENV_EOF
             
@@ -100,4 +100,3 @@ jobs:
             docker ps -f name=${CONTAINER_NAME}
             echo "=== Recent logs ==="
             docker logs ${CONTAINER_NAME} --tail 20
-            
