@@ -24,7 +24,8 @@ jobs:
             IMAGE_NAME="${{ vars.DOCKER_HUB_USERNAME }}/ark"
             IMAGE_TAG="${{ github.event.inputs.image_tag || 'latest' }}"
             CONTAINER_NAME="ark"
-            NETWORK_NAME="network"
+            COMPOSE_PROJECT="deploy"
+            COMPOSE_NETWORK="${COMPOSE_PROJECT}_network"
             
             # Login to Docker Hub if needed
             echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ vars.DOCKER_HUB_USERNAME }}" --password-stdin || true
@@ -40,15 +41,25 @@ jobs:
               docker rm ${CONTAINER_NAME} || true
             fi
             
-            # Create network if it doesn't exist
-            docker network create ${NETWORK_NAME} || true
+            # Create .env file
+            echo "Creating .env file..."
+            cat > .env << 'ENV_EOF'
+            SPRING_PROFILES_ACTIVE=live
+            storage.database.core-db.url=${{ vars.MYSQL_URL }}
+            storage.database.core-db.username=${{ vars.MYSQL_USER }}
+            storage.database.core-db.password=${{ secrets.MYSQL_PASSWORD }}
+            s3.endpoint=${{ vars.MINIO_ENDPOINT }}
+            s3.access-key=${{ var.MINIO_ROOT_USER }}
+            s3.secret-key=${{ secrets.MINIO_ROOT_PASSWORD }}
+            ENV_EOF
             
-            # Run new container
+            # Run new container (connected to docker-compose network)
             echo "Starting new container..."
             docker run -d \
               --name ${CONTAINER_NAME} \
-              --network ${NETWORK_NAME} \
+              --network ${COMPOSE_NETWORK} \
               -p 8080:8080 \
+              --env-file .env \
               --restart unless-stopped \
               ${IMAGE_NAME}:${IMAGE_TAG}
             
@@ -89,4 +100,4 @@ jobs:
             docker ps -f name=${CONTAINER_NAME}
             echo "=== Recent logs ==="
             docker logs ${CONTAINER_NAME} --tail 20
-
+            

@@ -34,6 +34,16 @@ jobs:
           script: |
             cd /home/ubuntu/ark-deploy/deploy
             
+            # Create .env file for docker-compose
+            cat > .env << EOF
+            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            MYSQL_DATABASE=${{ vars.MYSQL_DATABASE }}
+            MYSQL_USER=${{ vars.MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            MINIO_ROOT_USER=${{ vars.MINIO_ROOT_USER }}
+            MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
+            EOF
+            
             # Generate SSL certificate if not exists
             SSL_DIR="nginx/ssl"
             CERT_FILE="${SSL_DIR}/cert.pem"
