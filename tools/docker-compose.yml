@@ -3,10 +3,10 @@ services:
     image: mysql:8.0
     container_name: ark-mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=ark123!
-      - MYSQL_DATABASE=ark
-      - MYSQL_USER=ark
-      - MYSQL_PASSWORD=ark123!
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-ark123!}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ark}
+      - MYSQL_USER=${MYSQL_USER:-ark}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ark123!}
     ports:
       - "3306:3306"
     volumes:
@@ -15,7 +15,7 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "ark", "-park123!" ]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER:-ark}", "-p${MYSQL_PASSWORD:-ark123!}" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -46,8 +46,8 @@ services:
     container_name: ark-minio
     command: server /data --console-address ":9001"
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
     ports:
       - "9000:9000"
       - "9001:9001"

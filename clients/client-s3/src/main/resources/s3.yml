@@ -7,14 +7,28 @@ storage:
     bucket: ark-local
 
 ---
+spring.config.activate.on-profile: local
+
+
+---
 spring.config.activate.on-profile: local-dev
+
+
+---
+spring.config.activate.on-profile: dev
+
+
+---
+spring.config.activate.on-profile: staging
+
+
+---
+spring.config.activate.on-profile: live
 
 storage:
   s3:
-    endpoint: http://localhost:9000
+    endpoint: http://minio:9000
     region: ap-northeast-2
-    access-key: minioadmin
-    secret-key: minioadmin
+    access-key: ${s3.access-key}
+    secret-key: ${s3.secret-key}
     bucket: ark-local
-
-
