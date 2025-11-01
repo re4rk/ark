@@ -2,7 +2,7 @@ name: Build Main
 
 on:
   push:
-    branches: [ main ,ARK-009 ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
