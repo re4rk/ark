@@ -1,6 +1,8 @@
 name: Deploy Main
 
 on:
+  push:
+    branches: [ ARK-009 ]
   workflow_dispatch:
     inputs:
       image_tag:
