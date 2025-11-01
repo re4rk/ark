@@ -45,26 +45,29 @@ jobs:
             # Restart services (only changed ones will be updated)
             docker compose up -d
             
-            # Wait for all services to be healthy using Docker Compose health checks
-            echo "Waiting for all services to be healthy..."
+            # Wait for health checks (max 5 minutes)
+            echo "Waiting for services to become healthy..."
+            healthy_count=0
+            for i in {1..30}; do
+              sleep 10
+              healthy_count=0
+              for s in mysql redis minio; do
+                [ "$(docker inspect ark-$s --format '{{.State.Health.Status}}' 2>/dev/null)" = "healthy" ] && healthy_count=$((healthy_count+1))
+              done
+              [ $healthy_count -eq 3 ] && break
+            done
             
-            # Wait for all services to reach healthy state
-            timeout 120 bash -c 'until docker compose ps --format "table {{.Name}}\t{{.Status}}" | grep -q "healthy"; do
-              echo "Waiting for services to be healthy..."
-              docker compose ps --format "table {{.Name}}\t{{.Status}}"
-              sleep 5
-            done'
-            
-            # Final health check - ensure all services are healthy
-            echo "Final health check..."
-            docker compose ps --format "table {{.Name}}\t{{.Status}}"
-            
-            # Verify all services are healthy
-            unhealthy_services=$(docker compose ps --format "{{.Name}} {{.Status}}" | grep -v "healthy" | grep -v "unhealthy" | wc -l)
-            if [ "$unhealthy_services" -gt 0 ]; then
-              echo "Some services are not healthy:"
-              docker compose ps --format "table {{.Name}}\t{{.Status}}" | grep -v "healthy"
-              exit 1
-            fi
-            
-            echo "All services are healthy! Deployment completed successfully!"
+            # Verify and show status
+            docker compose ps
+            for s in mysql redis minio; do
+              status=$(docker inspect ark-$s --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
+              health=$(docker inspect ark-$s --format '{{.State.Health.Status}}' 2>/dev/null || echo "no-healthcheck")
+              
+              if [ "$status" != "running" ]; then
+                echo "Error: ark-$s is not running (status: $status)" && exit 1
+              fi
+              if [ "$health" != "healthy" ] && [ "$health" != "no-healthcheck" ]; then
+                echo "Error: ark-$s is not healthy ($health)" && exit 1
+              fi
+            done
+            echo "All services are healthy!"
