@@ -1,0 +1,76 @@
+name: Deploy Main Services
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-services:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r tools/* deploy/
+
+      - name: Deploy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          key: ${{ secrets.ARK_SSH_KEY }}
+          source: "deploy/*"
+          target: "/home/ubuntu/ark-deploy/"
+
+      - name: Update services
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          key: ${{ secrets.ARK_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/ark-deploy/deploy
+            
+            # Pull latest images and restart only changed services
+            docker compose pull
+            
+            # Restart services (only changed ones will be updated)
+            docker compose up -d
+            
+            # Get service list from docker-compose.yml
+            services=$(docker compose config --services)
+            service_count=$(echo "$services" | wc -l)
+            
+            # Wait for health checks (max 5 minutes)
+            echo "Waiting for services to become healthy..."
+            for i in {1..30}; do
+              sleep 10
+              healthy_count=0
+              for s in $services; do
+                container=$(docker compose ps -q $s | head -n1)
+                [ -n "$container" ] && [ "$(docker inspect $container --format '{{.State.Health.Status}}' 2>/dev/null)" = "healthy" ] && healthy_count=$((healthy_count+1))
+              done
+              [ $healthy_count -eq $service_count ] && break
+            done
+            
+            # Verify and show status
+            docker compose ps
+            for s in $services; do
+              container=$(docker compose ps -q $s | head -n1)
+              [ -z "$container" ] && echo "Error: Service $s container not found" && exit 1
+              
+              status=$(docker inspect $container --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
+              health=$(docker inspect $container --format '{{.State.Health.Status}}' 2>/dev/null || echo "no-healthcheck")
+              
+              if [ "$status" != "running" ]; then
+                echo "Error: Service $s is not running (status: $status)" && exit 1
+              fi
+              if [ "$health" != "healthy" ] && [ "$health" != "no-healthcheck" ]; then
+                echo "Error: Service $s is not healthy ($health)" && exit 1
+              fi
+            done
+            echo "All services are healthy!"
+

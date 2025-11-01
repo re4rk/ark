@@ -1,80 +1,92 @@
-name: PR CD
+name: Deploy Main
 
 on:
-  push:
-    branches: [ main, ARK-008 ] # ARK-008은 테스트용 머지전에 삭제
-  pull_request:
-    branches: [ main ]
-    types: [ closed ]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag (default: latest)'
+        required: false
+        default: 'latest'
+        type: string
 
 jobs:
-  deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/ARK-008'
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Create deployment package
-        run: |
-          mkdir -p deploy
-          cp -r tools/* deploy/
-
-      - name: Deploy files to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ vars.DEPLOY_HOST }}
-          username: ${{ vars.DEPLOY_USER }}
-          key: ${{ secrets.ARK_SSH_KEY }}
-          source: "deploy/*"
-          target: "/home/ubuntu/ark-deploy/"
-
-      - name: Update services
+      - name: Deploy backend to server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST }}
           username: ${{ vars.DEPLOY_USER }}
           key: ${{ secrets.ARK_SSH_KEY }}
           script: |
-            cd /home/ubuntu/ark-deploy/deploy
+            IMAGE_NAME="${{ vars.DOCKER_HUB_USERNAME }}/ark-backend"
+            IMAGE_TAG="${{ github.event.inputs.image_tag || 'latest' }}"
+            CONTAINER_NAME="ark-backend"
+            NETWORK_NAME="network"
             
-            # Pull latest images and restart only changed services
-            docker compose pull
+            # Login to Docker Hub if needed
+            echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ vars.DOCKER_HUB_USERNAME }}" --password-stdin || true
             
-            # Restart services (only changed ones will be updated)
-            docker compose up -d
+            # Pull latest image
+            echo "Pulling image: ${IMAGE_NAME}:${IMAGE_TAG}"
+            docker pull ${IMAGE_NAME}:${IMAGE_TAG}
             
-            # Get service list from docker-compose.yml
-            services=$(docker compose config --services)
-            service_count=$(echo "$services" | wc -l)
+            # Stop and remove existing container if it exists
+            if [ "$(docker ps -aq -f name=${CONTAINER_NAME})" ]; then
+              echo "Stopping existing container..."
+              docker stop ${CONTAINER_NAME} || true
+              docker rm ${CONTAINER_NAME} || true
+            fi
             
-            # Wait for health checks (max 5 minutes)
-            echo "Waiting for services to become healthy..."
-            for i in {1..30}; do
-              sleep 10
-              healthy_count=0
-              for s in $services; do
-                container=$(docker compose ps -q $s | head -n1)
-                [ -n "$container" ] && [ "$(docker inspect $container --format '{{.State.Health.Status}}' 2>/dev/null)" = "healthy" ] && healthy_count=$((healthy_count+1))
-              done
-              [ $healthy_count -eq $service_count ] && break
+            # Create network if it doesn't exist
+            docker network create ${NETWORK_NAME} || true
+            
+            # Run new container
+            echo "Starting new container..."
+            docker run -d \
+              --name ${CONTAINER_NAME} \
+              --network ${NETWORK_NAME} \
+              -p 8080:8080 \
+              --restart unless-stopped \
+              ${IMAGE_NAME}:${IMAGE_TAG}
+            
+            # Wait for health check (max 2 minutes)
+            echo "Waiting for backend to become healthy..."
+            for i in {1..24}; do
+              sleep 5
+              CONTAINER_ID=$(docker ps -q -f name=${CONTAINER_NAME})
+              if [ -n "$CONTAINER_ID" ]; then
+                STATUS=$(docker inspect ${CONTAINER_ID} --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
+                if [ "$STATUS" = "running" ]; then
+                  # Check if application is responding
+                  if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1 || \
+                     curl -f http://localhost:8080/health > /dev/null 2>&1 || \
+                     curl -f http://localhost:8080/ > /dev/null 2>&1; then
+                    echo "Backend is healthy!"
+                    break
+                  fi
+                fi
+              fi
             done
             
-            # Verify and show status
-            docker compose ps
-            for s in $services; do
-              container=$(docker compose ps -q $s | head -n1)
-              [ -z "$container" ] && echo "Error: Service $s container not found" && exit 1
-              
-              status=$(docker inspect $container --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
-              health=$(docker inspect $container --format '{{.State.Health.Status}}' 2>/dev/null || echo "no-healthcheck")
-              
-              if [ "$status" != "running" ]; then
-                echo "Error: Service $s is not running (status: $status)" && exit 1
-              fi
-              if [ "$health" != "healthy" ] && [ "$health" != "no-healthcheck" ]; then
-                echo "Error: Service $s is not healthy ($health)" && exit 1
-              fi
-            done
-            echo "All services are healthy!"
+            # Verify container status
+            CONTAINER_ID=$(docker ps -q -f name=${CONTAINER_NAME})
+            if [ -z "$CONTAINER_ID" ]; then
+              echo "Error: Backend container not found" && exit 1
+            fi
+            
+            STATUS=$(docker inspect ${CONTAINER_ID} --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
+            if [ "$STATUS" != "running" ]; then
+              echo "Error: Backend is not running (status: $STATUS)"
+              docker logs ${CONTAINER_NAME} --tail 50
+              exit 1
+            fi
+            
+            # Show container status and logs
+            echo "Backend deployment successful!"
+            docker ps -f name=${CONTAINER_NAME}
+            echo "=== Recent logs ==="
+            docker logs ${CONTAINER_NAME} --tail 20
+
