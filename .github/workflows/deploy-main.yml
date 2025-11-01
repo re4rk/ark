@@ -1,0 +1,92 @@
+name: Deploy Main
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag (default: latest)'
+        required: false
+        default: 'latest'
+        type: string
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy backend to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          key: ${{ secrets.ARK_SSH_KEY }}
+          script: |
+            IMAGE_NAME="${{ vars.DOCKER_HUB_USERNAME }}/ark-backend"
+            IMAGE_TAG="${{ github.event.inputs.image_tag || 'latest' }}"
+            CONTAINER_NAME="ark-backend"
+            NETWORK_NAME="network"
+            
+            # Login to Docker Hub if needed
+            echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ vars.DOCKER_HUB_USERNAME }}" --password-stdin || true
+            
+            # Pull latest image
+            echo "Pulling image: ${IMAGE_NAME}:${IMAGE_TAG}"
+            docker pull ${IMAGE_NAME}:${IMAGE_TAG}
+            
+            # Stop and remove existing container if it exists
+            if [ "$(docker ps -aq -f name=${CONTAINER_NAME})" ]; then
+              echo "Stopping existing container..."
+              docker stop ${CONTAINER_NAME} || true
+              docker rm ${CONTAINER_NAME} || true
+            fi
+            
+            # Create network if it doesn't exist
+            docker network create ${NETWORK_NAME} || true
+            
+            # Run new container
+            echo "Starting new container..."
+            docker run -d \
+              --name ${CONTAINER_NAME} \
+              --network ${NETWORK_NAME} \
+              -p 8080:8080 \
+              --restart unless-stopped \
+              ${IMAGE_NAME}:${IMAGE_TAG}
+            
+            # Wait for health check (max 2 minutes)
+            echo "Waiting for backend to become healthy..."
+            for i in {1..24}; do
+              sleep 5
+              CONTAINER_ID=$(docker ps -q -f name=${CONTAINER_NAME})
+              if [ -n "$CONTAINER_ID" ]; then
+                STATUS=$(docker inspect ${CONTAINER_ID} --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
+                if [ "$STATUS" = "running" ]; then
+                  # Check if application is responding
+                  if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1 || \
+                     curl -f http://localhost:8080/health > /dev/null 2>&1 || \
+                     curl -f http://localhost:8080/ > /dev/null 2>&1; then
+                    echo "Backend is healthy!"
+                    break
+                  fi
+                fi
+              fi
+            done
+            
+            # Verify container status
+            CONTAINER_ID=$(docker ps -q -f name=${CONTAINER_NAME})
+            if [ -z "$CONTAINER_ID" ]; then
+              echo "Error: Backend container not found" && exit 1
+            fi
+            
+            STATUS=$(docker inspect ${CONTAINER_ID} --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
+            if [ "$STATUS" != "running" ]; then
+              echo "Error: Backend is not running (status: $STATUS)"
+              docker logs ${CONTAINER_NAME} --tail 50
+              exit 1
+            fi
+            
+            # Show container status and logs
+            echo "Backend deployment successful!"
+            docker ps -f name=${CONTAINER_NAME}
+            echo "=== Recent logs ==="
+            docker logs ${CONTAINER_NAME} --tail 20
+
