@@ -6,7 +6,7 @@ on:
 jobs:
   deploy-services:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -81,10 +81,10 @@ jobs:
             for s in $services; do
               container=$(docker compose ps -q $s | head -n1)
               [ -z "$container" ] && echo "Error: Service $s container not found" && exit 1
-              
+            
               status=$(docker inspect $container --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
               health=$(docker inspect $container --format '{{.State.Health.Status}}' 2>/dev/null || echo "no-healthcheck")
-              
+            
               if [ "$status" != "running" ]; then
                 echo "Error: Service $s is not running (status: $status)" && exit 1
               fi
@@ -93,4 +93,3 @@ jobs:
               fi
             done
             echo "All services are healthy!"
-
