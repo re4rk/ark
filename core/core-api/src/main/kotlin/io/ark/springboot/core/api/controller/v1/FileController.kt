@@ -4,6 +4,7 @@ import io.ark.springboot.core.api.controller.v1.request.UploadFileRequest
 import io.ark.springboot.core.api.controller.v1.response.FileResponse
 import io.ark.springboot.core.api.controller.v1.response.GetFileUrlResponse
 import io.ark.springboot.core.domain.file.FileService
+import io.ark.springboot.core.domain.file.UploadFileService
 import io.ark.springboot.core.support.response.ApiResponse
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import kotlinx.coroutines.runBlocking
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/files")
 class FileController(
     private val fileService: FileService,
+    private val uploadFileService: UploadFileService,
 ) {
     private val logger = LoggerFactory.getLogger(FileController::class.java)
 
@@ -27,7 +29,7 @@ class FileController(
     fun upload(
         @ModelAttribute uploadFileRequest: UploadFileRequest,
     ): ApiResponse<FileResponse> = runBlocking {
-        val fileDto = fileService.uploadFile(
+        val fileDto = uploadFileService.uploadFile(
             file = uploadFileRequest.file,
             category = uploadFileRequest.category,
             uploaderId = uploadFileRequest.uploaderId,

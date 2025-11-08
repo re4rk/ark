@@ -2,6 +2,7 @@ package io.ark.springboot.core.api.controller.v1
 
 import io.ark.springboot.core.domain.file.FileDto
 import io.ark.springboot.core.domain.file.FileService
+import io.ark.springboot.core.domain.file.UploadFileService
 import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import io.ark.springboot.test.api.RestDocsTest
@@ -25,12 +26,14 @@ import java.time.LocalDateTime
 
 class FileControllerTest : RestDocsTest() {
     private lateinit var fileService: FileService
+    private lateinit var uploadFileService: UploadFileService
     private lateinit var controller: FileController
 
     @BeforeEach
     fun setUp() {
         fileService = mockk()
-        controller = FileController(fileService)
+        uploadFileService = mockk()
+        controller = FileController(fileService, uploadFileService)
         mockMvc = mockController(controller)
     }
 
@@ -53,7 +56,7 @@ class FileControllerTest : RestDocsTest() {
             uploaderId = 1L,
         )
         coEvery {
-            fileService.uploadFile(
+            uploadFileService.uploadFile(
                 file = any(),
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
@@ -137,7 +140,7 @@ class FileControllerTest : RestDocsTest() {
             uploaderId = 1L,
         )
         coEvery {
-            fileService.uploadFile(
+            uploadFileService.uploadFile(
                 file = any(),
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
