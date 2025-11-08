@@ -1,7 +1,6 @@
 package io.ark.springboot.core.domain.file
 
 import io.ark.springboot.storage.db.core.file.FileCategory
-import io.ark.springboot.storage.db.core.file.FileEntity
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import java.time.LocalDateTime
 
