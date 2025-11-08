@@ -32,7 +32,7 @@ class FileServiceTest {
         // given
         val fileId = 1L
 
-        val fileData = FileData(
+        val file = File(
             id = fileId,
             originalName = "test.txt",
             key = "test-key",
@@ -45,11 +45,11 @@ class FileServiceTest {
             uploaderId = 1L,
         )
 
-        val updatedFileData = fileData.copy(status = UploadStatus.UPLOADED)
+        val updatedFile = file.copy(status = UploadStatus.UPLOADED)
 
-        every { fileStorage.getFile(fileId) } returns fileData
+        every { fileStorage.getFile(fileId) } returns file
         every { externalFileStorage.exists("test-key") } returns true
-        every { fileStorage.updateStatus(fileId, UploadStatus.UPLOADED) } returns updatedFileData
+        every { fileStorage.updateStatus(fileId, UploadStatus.UPLOADED) } returns updatedFile
 
         // when
         val result = fileService.getFileStatus(fileId)
@@ -79,7 +79,7 @@ class FileServiceTest {
         val key = "test-key"
         val presignedUrl = "https://example.com/presigned-url"
 
-        val fileData = FileData(
+        val file = File(
             id = fileId,
             originalName = "test.txt",
             key = key,
@@ -92,7 +92,7 @@ class FileServiceTest {
             uploaderId = 1L,
         )
 
-        every { fileStorage.getFile(fileId) } returns fileData
+        every { fileStorage.getFile(fileId) } returns file
         every { externalFileStorage.getPresignedUrl(key) } returns presignedUrl
 
         // when
@@ -108,7 +108,7 @@ class FileServiceTest {
         val fileId = 1L
         val key = "test-key"
 
-        val fileData = FileData(
+        val file = File(
             id = fileId,
             originalName = "test.txt",
             key = key,
@@ -121,7 +121,7 @@ class FileServiceTest {
             uploaderId = 1L,
         )
 
-        every { fileStorage.getFile(fileId) } returns fileData
+        every { fileStorage.getFile(fileId) } returns file
         every { externalFileStorage.getPresignedUrl(key) } throws RuntimeException("S3 error")
 
         // when & then

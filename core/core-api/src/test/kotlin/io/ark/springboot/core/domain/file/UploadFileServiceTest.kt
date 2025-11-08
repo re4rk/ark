@@ -53,9 +53,9 @@ class UploadFileServiceTest {
         )
         val key = "test-key"
 
-        val savedFileData = FileData(
+        val savedFile = File(
             id = 1L,
-            originalName = file.originalFilename ?: "unknown",
+            originalName = file.originalFilename,
             key = key,
             size = file.size,
             mimeType = file.contentType ?: "application/octet-stream",
@@ -66,11 +66,11 @@ class UploadFileServiceTest {
             uploaderId = 1L,
         )
 
-        val updatedFileData = savedFileData.copy(status = UploadStatus.UPLOADED)
+        val updatedFile = savedFile.copy(status = UploadStatus.UPLOADED)
 
         every { externalFileStorage.generateKey(any(), any(), any()) } returns key
-        every { fileStorage.save(any(), any(), any(), any(), any(), any(), any()) } returns savedFileData
-        every { fileStorage.updateStatus(any(), UploadStatus.UPLOADED) } returns updatedFileData
+        every { fileStorage.save(any()) } returns savedFile
+        every { fileStorage.updateStatus(any(), UploadStatus.UPLOADED) } returns updatedFile
         coEvery { externalFileStorage.upload(any(), any(), any(), any()) } just runs
         every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(true)
 

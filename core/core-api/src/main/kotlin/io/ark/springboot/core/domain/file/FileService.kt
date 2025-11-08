@@ -15,24 +15,24 @@ class FileService(
 ) {
 
     @Transactional
-    fun getFileStatus(id: Long): FileData {
-        val fileData = fileStorage.getFile(id)
+    fun getFileStatus(id: Long): File {
+        val file = fileStorage.getFile(id)
 
-        if (fileData.status == UploadStatus.PENDING && externalFileStorage.exists(fileData.key)) {
+        if (file.status == UploadStatus.PENDING && externalFileStorage.exists(file.key)) {
             return fileStorage.updateStatus(id, UploadStatus.UPLOADED)
         }
 
-        return fileData
+        return file
     }
 
     @Transactional(readOnly = true)
     fun getDownloadUrl(fileId: Long): String {
-        val fileData = fileStorage.getFile(fileId)
+        val file = fileStorage.getFile(fileId)
 
-        return when (fileData.status) {
+        return when (file.status) {
             UploadStatus.PENDING -> {
-                if (externalFileStorage.exists(fileData.key)) {
-                    externalFileStorage.getPresignedUrl(fileData.key)
+                if (externalFileStorage.exists(file.key)) {
+                    externalFileStorage.getPresignedUrl(file.key)
                 } else {
                     throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
                 }
@@ -40,7 +40,7 @@ class FileService(
 
             UploadStatus.FAILED -> throw CoreException(ErrorType.FILE_UPLOAD_ERROR)
             UploadStatus.UPLOADED -> try {
-                externalFileStorage.getPresignedUrl(fileData.key)
+                externalFileStorage.getPresignedUrl(file.key)
             } catch (e: Exception) {
                 throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
             }

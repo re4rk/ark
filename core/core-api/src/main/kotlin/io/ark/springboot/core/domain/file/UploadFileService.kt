@@ -28,7 +28,7 @@ class UploadFileService(
         file: MultipartFile,
         category: FileCategory,
         uploaderId: Long,
-    ): FileData {
+    ): File {
         val validationResult = fileValidationDispatcher.validateFile(file)
         if (!validationResult.isValid) {
             throw CoreException(
@@ -41,7 +41,7 @@ class UploadFileService(
         val originalName = file.originalFilename ?: "unknown"
         val mimeType = file.contentType ?: "application/octet-stream"
 
-        val savedFileData = fileStorage.save(
+        val fileData = FileData(
             originalName = originalName,
             key = key,
             size = file.size,
@@ -50,6 +50,8 @@ class UploadFileService(
             category = category,
             uploaderId = uploaderId,
         )
+
+        val savedFile = fileStorage.save(fileData)
 
         applicationScope.launch {
             try {
@@ -61,16 +63,16 @@ class UploadFileService(
                 )
 
                 transactionTemplate.execute {
-                    fileStorage.updateStatus(savedFileData.id, UploadStatus.UPLOADED)
+                    fileStorage.updateStatus(savedFile.id, UploadStatus.UPLOADED)
                 }
             } catch (e: Exception) {
                 transactionTemplate.execute {
-                    fileStorage.updateStatus(savedFileData.id, UploadStatus.FAILED)
+                    fileStorage.updateStatus(savedFile.id, UploadStatus.FAILED)
                 }
                 throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)
             }
         }
 
-        return savedFileData
+        return savedFile
     }
 }

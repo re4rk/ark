@@ -6,4 +6,3 @@ interface ExternalFileStorage {
     fun exists(key: String): Boolean
     fun getPresignedUrl(key: String): String
 }
-
