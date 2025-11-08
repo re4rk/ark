@@ -51,7 +51,7 @@ class UploadFileService(
         return savedFile
     }
 
-    fun MultipartFile.mapToFileData(category: FileCategory, uploaderId: Long): FileData {
+    private fun MultipartFile.mapToFileData(category: FileCategory, uploaderId: Long): FileData {
         return FileData(
             originalName = this.originalFilename ?: "unknown",
             key = externalFileStorage.generateKey(uploaderId.toString(), category.name, this.originalFilename ?: "unknown"),
