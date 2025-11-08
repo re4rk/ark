@@ -78,7 +78,11 @@ class UploadFileServiceTest {
     @Test
     fun `지원하지 않는 파일 타입 업로드 시 예외 발생`() = runTest {
         // given
-        val file = createMockMultipartFile(originalFilename = "test.exe", contentType = "application/x-msdownload")
+        val file = createMockMultipartFile(
+            originalFilename = "test.exe",
+            contentType = "application/x-msdownload",
+            content = ByteArray(51 * 1024 * 1024),
+        )
 
         every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(false, "지원하지 않는 파일 타입입니다")
 
