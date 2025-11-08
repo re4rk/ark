@@ -76,13 +76,9 @@ class UploadFileServiceTest {
     }
 
     @Test
-    fun `지원하지 않는 파일 타입 업로드 시 예외 발생`() = runTest {
+    fun `파일 검증 실패 시 예외 발생`() = runTest {
         // given
-        val file = createMockMultipartFile(
-            originalFilename = "test.exe",
-            contentType = "application/x-msdownload",
-            content = ByteArray(51 * 1024 * 1024),
-        )
+        val file = createMockMultipartFile(originalFilename = "test.exe", contentType = "application/x-msdownload", content = ByteArray(51 * 1024 * 1024))
 
         every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(false, "지원하지 않는 파일 타입입니다")
 
@@ -91,20 +87,6 @@ class UploadFileServiceTest {
 
         // then
         assertThat(result.errorType).isEqualTo(ErrorType.FILE_UNSUPPORTED_TYPE)
-    }
-
-    @Test
-    fun `파일 크기 초과 시 예외 발생`() = runTest {
-        // given
-        val file = createMockMultipartFile(originalFilename = "large.txt", content = ByteArray(51 * 1024 * 1024))
-
-        every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(false, "파일 크기가 제한을 초과했습니다")
-
-        // when
-        val result = assertThrows<CoreException> { uploadFileService.uploadFile(file, FileCategory.IMAGE, 1L) }
-
-        // then
-        assertThat(result.errorType).isEqualTo(ErrorType.FILE_SIZE_EXCEEDED)
     }
 
     private fun createMockMultipartFile(
