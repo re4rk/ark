@@ -4,6 +4,7 @@ import io.ark.springboot.core.api.controller.v1.request.UploadFileRequest
 import io.ark.springboot.core.api.controller.v1.response.FileResponse
 import io.ark.springboot.core.api.controller.v1.response.GetFileUrlResponse
 import io.ark.springboot.core.domain.file.FileService
+import io.ark.springboot.core.domain.file.UploadFileService
 import io.ark.springboot.core.support.response.ApiResponse
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import kotlinx.coroutines.runBlocking
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/files")
 class FileController(
     private val fileService: FileService,
+    private val uploadFileService: UploadFileService,
 ) {
     private val logger = LoggerFactory.getLogger(FileController::class.java)
 
@@ -27,23 +29,23 @@ class FileController(
     fun upload(
         @ModelAttribute uploadFileRequest: UploadFileRequest,
     ): ApiResponse<FileResponse> = runBlocking {
-        val fileDto = fileService.uploadFile(
-            file = uploadFileRequest.file,
+        val file = uploadFileService.uploadFile(
+            multipartFile = uploadFileRequest.file,
             category = uploadFileRequest.category,
             uploaderId = uploadFileRequest.uploaderId,
         )
-        return@runBlocking ApiResponse.success(FileResponse.from(fileDto, null))
+        return@runBlocking ApiResponse.success(FileResponse.from(file, null))
     }
 
     @GetMapping("/{fileId}/status")
     fun getStatus(@PathVariable("fileId") fileId: Long): ApiResponse<FileResponse> {
-        val fileDto = fileService.getFileStatus(fileId)
-        val url = if (fileDto.status == UploadStatus.UPLOADED) {
+        val file = fileService.findById(fileId)
+        val url = if (file.status == UploadStatus.UPLOADED) {
             fileService.getDownloadUrl(fileId)
         } else {
             null
         }
-        return ApiResponse.success(FileResponse.from(fileDto, url))
+        return ApiResponse.success(FileResponse.from(file, url))
     }
 
     @GetMapping("/{fileId}/url")

@@ -6,7 +6,7 @@ import java.util.UUID
 
 @Service
 @Profile("test")
-class MockFileStorage : FileStorage {
+class MockExternalFileStorage : ExternalFileStorage {
 
     private val uploadedFiles = mutableMapOf<String, ByteArray>()
 

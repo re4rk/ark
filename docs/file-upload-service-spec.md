@@ -138,7 +138,7 @@ data class FileEntity(
 ) : BaseEntity()
 ```
 
-### FileDto
+### FileData
 ```kotlin
 data class FileDto(
     val id: Long,

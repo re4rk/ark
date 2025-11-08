@@ -1,7 +1,8 @@
 package io.ark.springboot.core.api.controller.v1
 
-import io.ark.springboot.core.domain.file.FileDto
+import io.ark.springboot.core.domain.file.File
 import io.ark.springboot.core.domain.file.FileService
+import io.ark.springboot.core.domain.file.UploadFileService
 import io.ark.springboot.storage.db.core.file.FileCategory
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import io.ark.springboot.test.api.RestDocsTest
@@ -25,12 +26,14 @@ import java.time.LocalDateTime
 
 class FileControllerTest : RestDocsTest() {
     private lateinit var fileService: FileService
+    private lateinit var uploadFileService: UploadFileService
     private lateinit var controller: FileController
 
     @BeforeEach
     fun setUp() {
         fileService = mockk()
-        controller = FileController(fileService)
+        uploadFileService = mockk()
+        controller = FileController(fileService, uploadFileService)
         mockMvc = mockController(controller)
     }
 
@@ -40,7 +43,7 @@ class FileControllerTest : RestDocsTest() {
         val fileContent = "hello world".toByteArray()
         val fileName = "test.txt"
         val now = LocalDateTime.now()
-        val fileDto = FileDto(
+        val file = File(
             id = 1L,
             originalName = fileName,
             key = "uploads/123456789-test.txt",
@@ -53,12 +56,12 @@ class FileControllerTest : RestDocsTest() {
             uploaderId = 1L,
         )
         coEvery {
-            fileService.uploadFile(
-                file = any(),
+            uploadFileService.uploadFile(
+                multipartFile = any(),
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
             )
-        } returns fileDto
+        } returns file
 
         // when & then
         given()
@@ -124,7 +127,7 @@ class FileControllerTest : RestDocsTest() {
         // given
         val fileContent = "hello world".toByteArray()
         val now = LocalDateTime.now()
-        val fileDto = FileDto(
+        val file = File(
             id = 1L,
             originalName = "unknown",
             key = "uploads/123456789-unknown",
@@ -137,12 +140,12 @@ class FileControllerTest : RestDocsTest() {
             uploaderId = 1L,
         )
         coEvery {
-            fileService.uploadFile(
-                file = any(),
+            uploadFileService.uploadFile(
+                multipartFile = any(),
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
             )
-        } returns fileDto
+        } returns file
 
         // when & then
         given()
@@ -178,7 +181,7 @@ class FileControllerTest : RestDocsTest() {
         // given
         val fileId = 1L
         val now = LocalDateTime.now()
-        val fileDto = FileDto(
+        val file = File(
             id = fileId,
             originalName = "test.txt",
             key = "uploads/123456789-test.txt",
@@ -192,7 +195,7 @@ class FileControllerTest : RestDocsTest() {
         )
         val presignedUrl = "https://example.com/presigned-url"
 
-        coEvery { fileService.getFileStatus(fileId) } returns fileDto
+        coEvery { fileService.findById(fileId) } returns file
         coEvery { fileService.getDownloadUrl(fileId) } returns presignedUrl
 
         // when & then
