@@ -30,12 +30,10 @@ class FileService(
         val file = fileStorage.getFile(fileId)
 
         return when (file.status) {
-            UploadStatus.PENDING -> {
-                if (externalFileStorage.exists(file.key)) {
-                    externalFileStorage.getPresignedUrl(file.key)
-                } else {
-                    throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
-                }
+            UploadStatus.PENDING -> if (externalFileStorage.exists(file.key)) {
+                externalFileStorage.getPresignedUrl(file.key)
+            } else {
+                throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
             }
 
             UploadStatus.FAILED -> throw CoreException(ErrorType.FILE_UPLOAD_ERROR)
