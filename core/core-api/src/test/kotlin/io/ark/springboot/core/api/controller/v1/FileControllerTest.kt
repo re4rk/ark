@@ -57,7 +57,7 @@ class FileControllerTest : RestDocsTest() {
         )
         coEvery {
             uploadFileService.uploadFile(
-                file = any(),
+                multipartFile = any(),
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
             )
@@ -141,7 +141,7 @@ class FileControllerTest : RestDocsTest() {
         )
         coEvery {
             uploadFileService.uploadFile(
-                file = any(),
+                multipartFile = any(),
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
             )

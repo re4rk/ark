@@ -24,55 +24,42 @@ class UploadFileService(
     @Qualifier("applicationTaskExecutor") private val applicationScope: CoroutineScope,
 ) {
     @Transactional
-    suspend fun uploadFile(
-        file: MultipartFile,
-        category: FileCategory,
-        uploaderId: Long,
-    ): File {
-        val validationResult = fileValidationDispatcher.validateFile(file)
+    suspend fun uploadFile(multipartFile: MultipartFile, category: FileCategory, uploaderId: Long): File {
+        val validationResult = fileValidationDispatcher.validateFile(multipartFile)
         if (!validationResult.isValid) {
-            throw CoreException(
-                ErrorType.FILE_UNSUPPORTED_TYPE,
-                data = validationResult.errorMessage ?: "Unsupported file type",
-            )
+            throw CoreException(ErrorType.FILE_UNSUPPORTED_TYPE, data = validationResult.errorMessage ?: "Unsupported file type")
         }
 
-        val key = externalFileStorage.generateKey(uploaderId.toString(), category.name, file.originalFilename ?: "unknown")
-        val originalName = file.originalFilename ?: "unknown"
-        val mimeType = file.contentType ?: "application/octet-stream"
-
-        val fileData = FileData(
-            originalName = originalName,
-            key = key,
-            size = file.size,
-            mimeType = mimeType,
-            status = UploadStatus.PENDING,
-            category = category,
-            uploaderId = uploaderId,
-        )
-
-        val savedFile = fileStorage.save(fileData)
+        val savedFile = fileStorage.save(multipartFile.mapToFileData(category, uploaderId))
 
         applicationScope.launch {
             try {
                 externalFileStorage.upload(
-                    bytes = file.bytes,
-                    key = key,
-                    originalFilename = originalName,
-                    contentType = mimeType,
+                    bytes = multipartFile.bytes,
+                    key = savedFile.key,
+                    originalFilename = savedFile.originalName,
+                    contentType = savedFile.mimeType,
                 )
 
-                transactionTemplate.execute {
-                    fileStorage.updateStatus(savedFile.id, UploadStatus.UPLOADED)
-                }
+                transactionTemplate.execute { fileStorage.updateStatus(savedFile.id, UploadStatus.UPLOADED) }
             } catch (e: Exception) {
-                transactionTemplate.execute {
-                    fileStorage.updateStatus(savedFile.id, UploadStatus.FAILED)
-                }
+                transactionTemplate.execute { fileStorage.updateStatus(savedFile.id, UploadStatus.FAILED) }
                 throw CoreException(ErrorType.FILE_UPLOAD_ERROR, cause = e)
             }
         }
 
         return savedFile
+    }
+
+    fun MultipartFile.mapToFileData(category: FileCategory, uploaderId: Long): FileData {
+        return FileData(
+            originalName = this.originalFilename ?: "unknown",
+            key = externalFileStorage.generateKey(uploaderId.toString(), category.name, this.originalFilename ?: "unknown"),
+            size = this.size,
+            mimeType = this.contentType ?: "application/octet-stream",
+            status = UploadStatus.PENDING,
+            category = category,
+            uploaderId = uploaderId,
+        )
     }
 }

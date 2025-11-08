@@ -30,7 +30,7 @@ class FileController(
         @ModelAttribute uploadFileRequest: UploadFileRequest,
     ): ApiResponse<FileResponse> = runBlocking {
         val file = uploadFileService.uploadFile(
-            file = uploadFileRequest.file,
+            multipartFile = uploadFileRequest.file,
             category = uploadFileRequest.category,
             uploaderId = uploadFileRequest.uploaderId,
         )
