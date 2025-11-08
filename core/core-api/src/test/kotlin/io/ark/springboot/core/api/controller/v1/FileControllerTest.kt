@@ -195,7 +195,7 @@ class FileControllerTest : RestDocsTest() {
         )
         val presignedUrl = "https://example.com/presigned-url"
 
-        coEvery { fileService.getFileStatus(fileId) } returns file
+        coEvery { fileService.findById(fileId) } returns file
         coEvery { fileService.getDownloadUrl(fileId) } returns presignedUrl
 
         // when & then

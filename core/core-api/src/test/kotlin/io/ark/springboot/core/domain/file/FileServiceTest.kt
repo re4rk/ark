@@ -52,7 +52,7 @@ class FileServiceTest {
         every { fileStorage.updateStatus(fileId, UploadStatus.UPLOADED) } returns updatedFile
 
         // when
-        val result = fileService.getFileStatus(fileId)
+        val result = fileService.findById(fileId)
 
         // then
         assertThat(result.status).isEqualTo(UploadStatus.UPLOADED)
@@ -66,7 +66,7 @@ class FileServiceTest {
 
         // when & then
         assertThrows<CoreException> {
-            fileService.getFileStatus(fileId)
+            fileService.findById(fileId)
         }.also {
             assertThat(it.errorType).isEqualTo(ErrorType.FILE_NOT_FOUND)
         }

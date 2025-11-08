@@ -39,7 +39,7 @@ class FileController(
 
     @GetMapping("/{fileId}/status")
     fun getStatus(@PathVariable("fileId") fileId: Long): ApiResponse<FileResponse> {
-        val file = fileService.getFileStatus(fileId)
+        val file = fileService.findById(fileId)
         val url = if (file.status == UploadStatus.UPLOADED) {
             fileService.getDownloadUrl(fileId)
         } else {
