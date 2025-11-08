@@ -29,23 +29,23 @@ class FileController(
     fun upload(
         @ModelAttribute uploadFileRequest: UploadFileRequest,
     ): ApiResponse<FileResponse> = runBlocking {
-        val fileDto = uploadFileService.uploadFile(
+        val fileData = uploadFileService.uploadFile(
             file = uploadFileRequest.file,
             category = uploadFileRequest.category,
             uploaderId = uploadFileRequest.uploaderId,
         )
-        return@runBlocking ApiResponse.success(FileResponse.from(fileDto, null))
+        return@runBlocking ApiResponse.success(FileResponse.from(fileData, null))
     }
 
     @GetMapping("/{fileId}/status")
     fun getStatus(@PathVariable("fileId") fileId: Long): ApiResponse<FileResponse> {
-        val fileDto = fileService.getFileStatus(fileId)
-        val url = if (fileDto.status == UploadStatus.UPLOADED) {
+        val fileData = fileService.getFileStatus(fileId)
+        val url = if (fileData.status == UploadStatus.UPLOADED) {
             fileService.getDownloadUrl(fileId)
         } else {
             null
         }
-        return ApiResponse.success(FileResponse.from(fileDto, url))
+        return ApiResponse.success(FileResponse.from(fileData, url))
     }
 
     @GetMapping("/{fileId}/url")

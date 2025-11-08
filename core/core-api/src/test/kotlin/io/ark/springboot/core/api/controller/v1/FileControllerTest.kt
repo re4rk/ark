@@ -1,6 +1,6 @@
 package io.ark.springboot.core.api.controller.v1
 
-import io.ark.springboot.core.domain.file.FileDto
+import io.ark.springboot.core.domain.file.FileData
 import io.ark.springboot.core.domain.file.FileService
 import io.ark.springboot.core.domain.file.UploadFileService
 import io.ark.springboot.storage.db.core.file.FileCategory
@@ -43,7 +43,7 @@ class FileControllerTest : RestDocsTest() {
         val fileContent = "hello world".toByteArray()
         val fileName = "test.txt"
         val now = LocalDateTime.now()
-        val fileDto = FileDto(
+        val fileData = FileData(
             id = 1L,
             originalName = fileName,
             key = "uploads/123456789-test.txt",
@@ -61,7 +61,7 @@ class FileControllerTest : RestDocsTest() {
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
             )
-        } returns fileDto
+        } returns fileData
 
         // when & then
         given()
@@ -127,7 +127,7 @@ class FileControllerTest : RestDocsTest() {
         // given
         val fileContent = "hello world".toByteArray()
         val now = LocalDateTime.now()
-        val fileDto = FileDto(
+        val fileData = FileData(
             id = 1L,
             originalName = "unknown",
             key = "uploads/123456789-unknown",
@@ -145,7 +145,7 @@ class FileControllerTest : RestDocsTest() {
                 category = FileCategory.IMAGE,
                 uploaderId = 1L,
             )
-        } returns fileDto
+        } returns fileData
 
         // when & then
         given()
@@ -181,7 +181,7 @@ class FileControllerTest : RestDocsTest() {
         // given
         val fileId = 1L
         val now = LocalDateTime.now()
-        val fileDto = FileDto(
+        val fileData = FileData(
             id = fileId,
             originalName = "test.txt",
             key = "uploads/123456789-test.txt",
@@ -195,7 +195,7 @@ class FileControllerTest : RestDocsTest() {
         )
         val presignedUrl = "https://example.com/presigned-url"
 
-        coEvery { fileService.getFileStatus(fileId) } returns fileDto
+        coEvery { fileService.getFileStatus(fileId) } returns fileData
         coEvery { fileService.getDownloadUrl(fileId) } returns presignedUrl
 
         // when & then

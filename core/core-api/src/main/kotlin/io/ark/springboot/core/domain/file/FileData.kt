@@ -5,7 +5,7 @@ import io.ark.springboot.storage.db.core.file.FileEntity
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import java.time.LocalDateTime
 
-data class FileDto(
+data class FileData(
     val id: Long,
     val originalName: String,
     val key: String,
@@ -18,7 +18,7 @@ data class FileDto(
     val uploaderId: Long,
 ) {
     companion object {
-        fun from(entity: FileEntity) = FileDto(
+        fun from(entity: FileEntity) = FileData(
             id = entity.id,
             originalName = entity.originalName,
             key = entity.key,

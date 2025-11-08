@@ -1,6 +1,6 @@
 package io.ark.springboot.core.api.controller.v1.response
 
-import io.ark.springboot.core.domain.file.FileDto
+import io.ark.springboot.core.domain.file.FileData
 import io.ark.springboot.storage.db.core.file.UploadStatus
 
 data class FileResponse(
@@ -12,7 +12,7 @@ data class FileResponse(
     val url: String?,
 ) {
     companion object {
-        fun from(dto: FileDto, url: String?) = FileResponse(
+        fun from(dto: FileData, url: String?) = FileResponse(
             id = dto.id,
             originalName = dto.originalName,
             size = dto.size,

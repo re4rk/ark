@@ -30,7 +30,7 @@ class UploadFileService(
         file: MultipartFile,
         category: FileCategory,
         uploaderId: Long,
-    ): FileDto {
+    ): FileData {
         val validationResult = fileValidationDispatcher.validateFile(file)
         if (!validationResult.isValid) {
             throw CoreException(
@@ -76,6 +76,6 @@ class UploadFileService(
             }
         }
 
-        return FileDto.from(savedEntity)
+        return FileData.from(savedEntity)
     }
 }

@@ -15,14 +15,14 @@ class FileService(
 ) {
 
     @Transactional
-    fun getFileStatus(id: Long): FileDto {
+    fun getFileStatus(id: Long): FileData {
         val entity = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
 
         if (entity.status == UploadStatus.PENDING && fileStorage.exists(entity.key)) {
             entity.status = UploadStatus.UPLOADED
         }
 
-        return FileDto.from(entity)
+        return FileData.from(entity)
     }
 
     @Transactional(readOnly = true)
