@@ -27,7 +27,11 @@ class UploadFileService(
     suspend fun uploadFile(multipartFile: MultipartFile, category: FileCategory, uploaderId: Long): File {
         val validationResult = fileValidationDispatcher.validateFile(multipartFile)
         if (!validationResult.isValid) {
-            throw CoreException(ErrorType.FILE_UNSUPPORTED_TYPE, data = validationResult.errorMessage ?: "Unsupported file type")
+            throw CoreException(
+                ErrorType.FILE_UNSUPPORTED_TYPE,
+                data =
+                validationResult.errorMessage ?: "Unsupported file type",
+            )
         }
 
         val savedFile = fileStorage.save(multipartFile.mapToFileData(category, uploaderId))
@@ -54,7 +58,11 @@ class UploadFileService(
     private fun MultipartFile.mapToFileData(category: FileCategory, uploaderId: Long): FileData {
         return FileData(
             originalName = this.originalFilename ?: "unknown",
-            key = externalFileStorage.generateKey(uploaderId.toString(), category.name, this.originalFilename ?: "unknown"),
+            key = externalFileStorage.generateKey(
+                uploaderId = uploaderId.toString(),
+                category = category.name,
+                originalName = this.originalFilename ?: "unknown",
+            ),
             size = this.size,
             mimeType = this.contentType ?: "application/octet-stream",
             status = UploadStatus.PENDING,

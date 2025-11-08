@@ -16,15 +16,11 @@ class S3ExternalFileStorage(
         return s3Client.generateKey(uploaderId, category, originalName)
     }
 
-    override suspend fun upload(
-        bytes: ByteArray,
-        key: String,
-        originalFilename: String,
-        contentType: String,
-    ) = withContext(Dispatchers.IO) {
-        s3Client.upload(bytes, key, originalFilename, contentType)
-        return@withContext
-    }
+    override suspend fun upload(bytes: ByteArray, key: String, originalFilename: String, contentType: String) =
+        withContext(Dispatchers.IO) {
+            s3Client.upload(bytes, key, originalFilename, contentType)
+            return@withContext
+        }
 
     override fun exists(key: String): Boolean {
         return s3Client.exists(key)

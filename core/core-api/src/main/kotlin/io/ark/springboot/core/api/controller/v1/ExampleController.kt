@@ -19,17 +19,13 @@ class ExampleController(
     val exampleService: ExampleService,
 ) {
     @PostMapping
-    fun postExample(
-        @RequestBody request: ExampleRequestDto,
-    ): ApiResponse<ExampleResponseDto> {
+    fun postExample(@RequestBody request: ExampleRequestDto): ApiResponse<ExampleResponseDto> {
         val result = exampleService.createExample(request.toExampleData())
         return ApiResponse.success(ExampleResponseDto.from(result))
     }
 
     @GetMapping("/{exampleId}")
-    fun getExample(
-        @PathVariable exampleId: Long,
-    ): ApiResponse<ExampleResponseDto> {
+    fun getExample(@PathVariable exampleId: Long): ApiResponse<ExampleResponseDto> {
         val result = exampleService.getExample(exampleId)
         return ApiResponse.success(ExampleResponseDto.from(result))
     }
@@ -44,9 +40,7 @@ class ExampleController(
     }
 
     @DeleteMapping("/{exampleId}")
-    fun deleteExample(
-        @PathVariable exampleId: Long,
-    ): ApiResponse<Unit> {
+    fun deleteExample(@PathVariable exampleId: Long): ApiResponse<Unit> {
         exampleService.deleteExample(exampleId)
         return ApiResponse.success(Unit)
     }

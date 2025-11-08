@@ -10,11 +10,7 @@ class CommentRepository(
 ) : QuerydslRepositorySupport(CommentEntity::class.java),
     CommentJpaRepository by commentJpaRepository {
 
-    fun findByFeedIdAndCursorAndLimit(
-        feedId: Long,
-        cursor: Long?,
-        limit: Long,
-    ): List<CommentEntity> {
+    fun findByFeedIdAndCursorAndLimit(feedId: Long, cursor: Long?, limit: Long): List<CommentEntity> {
         val whereClause = BooleanBuilder().apply {
             and(c.feedId.eq(feedId))
             and(c.deletedAt.isNull)

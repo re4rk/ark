@@ -40,7 +40,10 @@ abstract class RestDocsTest {
             .mockMvc(mockMvc)
     }
 
-    protected fun mockController(controller: Any, vararg resolvers: HandlerMethodArgumentResolver): MockMvcRequestSpecification {
+    protected fun mockController(
+        controller: Any,
+        vararg resolvers: HandlerMethodArgumentResolver,
+    ): MockMvcRequestSpecification {
         customArgumentResolvers = resolvers.toList()
         val mockMvc = createMockMvc(controller)
         return RestAssuredMockMvc.given()

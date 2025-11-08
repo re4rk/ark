@@ -26,9 +26,7 @@ class FileController(
     private val logger = LoggerFactory.getLogger(FileController::class.java)
 
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun upload(
-        @ModelAttribute uploadFileRequest: UploadFileRequest,
-    ): ApiResponse<FileResponse> = runBlocking {
+    fun upload(@ModelAttribute uploadFileRequest: UploadFileRequest): ApiResponse<FileResponse> = runBlocking {
         val file = uploadFileService.uploadFile(
             multipartFile = uploadFileRequest.file,
             category = uploadFileRequest.category,

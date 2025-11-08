@@ -40,7 +40,15 @@ class UploadFileServiceTest {
         fileValidationDispatcher = mockk()
         applicationScope = CoroutineScope(Dispatchers.Unconfined)
         uploadFileService =
-            spyk(UploadFileService(fileStorage, externalFileStorage, transactionTemplate, fileValidationDispatcher, applicationScope))
+            spyk(
+                UploadFileService(
+                    fileStorage,
+                    externalFileStorage,
+                    transactionTemplate,
+                    fileValidationDispatcher,
+                    applicationScope,
+                ),
+            )
     }
 
     @Test
@@ -78,7 +86,11 @@ class UploadFileServiceTest {
     @Test
     fun `파일 검증 실패 시 예외 발생`() = runTest {
         // given
-        val file = createMockMultipartFile(originalFilename = "test.exe", contentType = "application/x-msdownload", content = ByteArray(51 * 1024 * 1024))
+        val file = createMockMultipartFile(
+            originalFilename = "test.exe",
+            contentType = "application/x-msdownload",
+            content = ByteArray(51 * 1024 * 1024),
+        )
 
         every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(false, "지원하지 않는 파일 타입입니다")
 

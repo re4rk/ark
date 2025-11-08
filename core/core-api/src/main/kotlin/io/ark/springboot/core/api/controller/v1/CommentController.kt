@@ -23,10 +23,7 @@ class CommentController(
     }
 
     @PutMapping("/{commentId}")
-    fun updateComment(
-        @PathVariable commentId: Long,
-        @RequestBody commentData: CommentData,
-    ): ApiResponse<Long> {
+    fun updateComment(@PathVariable commentId: Long, @RequestBody commentData: CommentData): ApiResponse<Long> {
         val comment = commentService.updateComment(commentId, commentData)
         return ApiResponse.success(comment.id)
     }
