@@ -16,19 +16,4 @@ data class File(
     val updatedAt: LocalDateTime,
     val category: FileCategory,
     val uploaderId: Long,
-) {
-    companion object {
-        fun from(entity: FileEntity) = File(
-            id = entity.id,
-            originalName = entity.originalName,
-            key = entity.key,
-            size = entity.size,
-            mimeType = entity.mimeType,
-            status = entity.status,
-            createdAt = entity.createdAt,
-            updatedAt = entity.updatedAt,
-            category = entity.category,
-            uploaderId = entity.uploaderId,
-        )
-    }
-}
+)
