@@ -238,7 +238,8 @@ class S3ClientTest {
         // given
         val awsS3ClientForBucketTest = mockk<AwsS3Client>()
         val s3PresignerForBucketTest = mockk<S3Presigner>()
-        every { awsS3ClientForBucketTest.headBucket(any<HeadBucketRequest>()) } throws NoSuchBucketException.builder().build()
+        every { awsS3ClientForBucketTest.headBucket(any<HeadBucketRequest>()) } throws
+            NoSuchBucketException.builder().build()
         every { awsS3ClientForBucketTest.createBucket(any<CreateBucketRequest>()) } returns mockk()
 
         // when

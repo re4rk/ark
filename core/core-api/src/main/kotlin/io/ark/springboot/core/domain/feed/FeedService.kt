@@ -27,9 +27,7 @@ class FeedService(
         return feed
     }
 
-    fun getFeeds(
-        cursor: Long?,
-    ): Slice<Feed> {
+    fun getFeeds(cursor: Long?): Slice<Feed> {
         val feeds = feedStorage.getFeeds(cursor)
         // TODO: 1. 작성자 정보 조회
         // TODO: 2. 좋아요 상태, 북마크 상태 조회

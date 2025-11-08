@@ -33,7 +33,9 @@ class SnowflakeIdGenerator : IdentifierGenerator {
         var timestamp = System.currentTimeMillis()
 
         if (timestamp < lastTimestamp) {
-            throw RuntimeException("Clock moved backwards! Refusing to generate id for ${lastTimestamp - timestamp} milliseconds")
+            throw RuntimeException(
+                "Clock moved backwards! Refusing to generate id for ${lastTimestamp - timestamp} milliseconds",
+            )
         }
 
         if (lastTimestamp == timestamp) {

@@ -28,9 +28,7 @@ class AuthController(
     }
 
     @GetMapping("/me")
-    fun me(
-        @AuthenticationPrincipal userPrincipal: UserPrincipal,
-    ): ApiResponse<MeResponse> {
+    fun me(@AuthenticationPrincipal userPrincipal: UserPrincipal): ApiResponse<MeResponse> {
         return ApiResponse.success(MeResponse.from(userPrincipal))
     }
 

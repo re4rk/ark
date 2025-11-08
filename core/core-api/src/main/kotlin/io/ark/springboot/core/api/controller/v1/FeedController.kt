@@ -41,10 +41,7 @@ class FeedController(
 
     // TODO: 1. 권한 검증 (작성자만 수정 가능)
     @PutMapping("/{feedId}")
-    fun updateFeed(
-        @PathVariable feedId: Long,
-        @RequestBody feedData: FeedData,
-    ): ApiResponse<Long> {
+    fun updateFeed(@PathVariable feedId: Long, @RequestBody feedData: FeedData): ApiResponse<Long> {
         val feed = feedService.updateFeed(feedId, feedData)
         return ApiResponse.success(feed.id)
     }

@@ -56,7 +56,8 @@ class S3Config {
     }
 
     @Bean
-    fun s3Client(awsS3Client: AwsS3Client, s3Presigner: S3Presigner, props: S3Properties): S3Client = DefaultS3Client(awsS3Client, s3Presigner, props.bucket)
+    fun s3Client(awsS3Client: AwsS3Client, s3Presigner: S3Presigner, props: S3Properties): S3Client =
+        DefaultS3Client(awsS3Client, s3Presigner, props.bucket)
 }
 
 @ConfigurationProperties(prefix = "storage.s3")
