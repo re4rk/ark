@@ -32,18 +32,7 @@ class FileServiceTest {
         // given
         val fileId = 1L
 
-        val file = File(
-            id = fileId,
-            originalName = "test.txt",
-            key = "test-key",
-            size = 100L,
-            mimeType = "text/plain",
-            status = UploadStatus.PENDING,
-            createdAt = LocalDateTime.now(),
-            updatedAt = LocalDateTime.now(),
-            category = FileCategory.IMAGE,
-            uploaderId = 1L,
-        )
+        val file = createFile(id = fileId, status = UploadStatus.PENDING)
 
         val updatedFile = file.copy(status = UploadStatus.UPLOADED)
 
@@ -64,12 +53,11 @@ class FileServiceTest {
         val fileId = 1L
         every { fileStorage.getFile(fileId) } throws CoreException(ErrorType.FILE_NOT_FOUND)
 
-        // when & then
-        assertThrows<CoreException> {
-            fileService.findById(fileId)
-        }.also {
-            assertThat(it.errorType).isEqualTo(ErrorType.FILE_NOT_FOUND)
-        }
+        // when
+        val result = assertThrows<CoreException> { fileService.findById(fileId) }
+
+        // then
+        assertThat(result.errorType).isEqualTo(ErrorType.FILE_NOT_FOUND)
     }
 
     @Test
@@ -79,18 +67,7 @@ class FileServiceTest {
         val key = "test-key"
         val presignedUrl = "https://example.com/presigned-url"
 
-        val file = File(
-            id = fileId,
-            originalName = "test.txt",
-            key = key,
-            size = 100L,
-            mimeType = "text/plain",
-            status = UploadStatus.UPLOADED,
-            createdAt = LocalDateTime.now(),
-            updatedAt = LocalDateTime.now(),
-            category = FileCategory.IMAGE,
-            uploaderId = 1L,
-        )
+        val file = createFile(id = fileId, key = key, status = UploadStatus.UPLOADED)
 
         every { fileStorage.getFile(fileId) } returns file
         every { externalFileStorage.getPresignedUrl(key) } returns presignedUrl
@@ -108,27 +85,39 @@ class FileServiceTest {
         val fileId = 1L
         val key = "test-key"
 
-        val file = File(
-            id = fileId,
-            originalName = "test.txt",
-            key = key,
-            size = 100L,
-            mimeType = "text/plain",
-            status = UploadStatus.UPLOADED,
-            createdAt = LocalDateTime.now(),
-            updatedAt = LocalDateTime.now(),
-            category = FileCategory.IMAGE,
-            uploaderId = 1L,
-        )
+        val file = createFile(id = fileId, key = key, status = UploadStatus.UPLOADED)
 
         every { fileStorage.getFile(fileId) } returns file
         every { externalFileStorage.getPresignedUrl(key) } throws RuntimeException("S3 error")
 
-        // when & then
-        assertThrows<CoreException> {
-            fileService.getDownloadUrl(fileId)
-        }.also {
-            assertThat(it.errorType).isEqualTo(ErrorType.FILE_DOWNLOAD_ERROR)
-        }
+        // when
+        val result = assertThrows<CoreException> { fileService.getDownloadUrl(fileId) }
+
+        // then
+        assertThat(result.errorType).isEqualTo(ErrorType.FILE_DOWNLOAD_ERROR)
+    }
+
+    private fun createFile(
+        id: Long = 1L,
+        originalName: String = "test.txt",
+        key: String = "test-key",
+        size: Long = 100L,
+        mimeType: String = "text/plain",
+        status: UploadStatus = UploadStatus.PENDING,
+        category: FileCategory = FileCategory.IMAGE,
+        uploaderId: Long = 1L,
+    ): File {
+        return File(
+            id = id,
+            originalName = originalName,
+            key = key,
+            size = size,
+            mimeType = mimeType,
+            status = status,
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now(),
+            category = category,
+            uploaderId = uploaderId,
+        )
     }
 }
