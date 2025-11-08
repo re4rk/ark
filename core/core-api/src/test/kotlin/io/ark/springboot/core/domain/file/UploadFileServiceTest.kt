@@ -39,31 +39,23 @@ class UploadFileServiceTest {
         transactionTemplate = FakeTransactionTemplate()
         fileValidationDispatcher = mockk()
         applicationScope = CoroutineScope(Dispatchers.Unconfined)
-        uploadFileService = spyk(UploadFileService(fileStorage, externalFileStorage, transactionTemplate, fileValidationDispatcher, applicationScope))
+        uploadFileService =
+            spyk(UploadFileService(fileStorage, externalFileStorage, transactionTemplate, fileValidationDispatcher, applicationScope))
     }
 
     @Test
     fun `파일 업로드 성공`() = runTest {
         // given
-        val file = MockMultipartFile(
-            "file",
-            "test.txt",
-            "text/plain",
-            "test".toByteArray(),
-        )
+        val file = createMockMultipartFile()
         val key = "test-key"
 
-        val savedFile = File(
+        val savedFile = createFile(
             id = 1L,
             originalName = file.originalFilename,
             key = key,
             size = file.size,
             mimeType = file.contentType ?: "application/octet-stream",
             status = UploadStatus.PENDING,
-            createdAt = java.time.LocalDateTime.now(),
-            updatedAt = java.time.LocalDateTime.now(),
-            category = FileCategory.IMAGE,
-            uploaderId = 1L,
         )
 
         val updatedFile = savedFile.copy(status = UploadStatus.UPLOADED)
@@ -86,40 +78,66 @@ class UploadFileServiceTest {
     @Test
     fun `지원하지 않는 파일 타입 업로드 시 예외 발생`() = runTest {
         // given
-        val file = MockMultipartFile(
-            "file",
-            "test.exe",
-            "application/x-msdownload",
-            "test".toByteArray(),
-        )
+        val file = createMockMultipartFile(originalFilename = "test.exe", contentType = "application/x-msdownload")
 
         every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(false, "지원하지 않는 파일 타입입니다")
 
-        // when & then
-        assertThrows<CoreException> {
-            uploadFileService.uploadFile(file, FileCategory.IMAGE, 1L)
-        }.also {
-            assertThat(it.errorType).isEqualTo(ErrorType.FILE_UNSUPPORTED_TYPE)
-        }
+        // when
+        val result = assertThrows<CoreException> { uploadFileService.uploadFile(file, FileCategory.IMAGE, 1L) }
+
+        // then
+        assertThat(result.errorType).isEqualTo(ErrorType.FILE_UNSUPPORTED_TYPE)
     }
 
     @Test
     fun `파일 크기 초과 시 예외 발생`() = runTest {
         // given
-        val file = MockMultipartFile(
-            "file",
-            "large.txt",
-            "text/plain",
-            ByteArray(51 * 1024 * 1024), // 51MB
-        )
+        val file = createMockMultipartFile(originalFilename = "large.txt", content = ByteArray(51 * 1024 * 1024))
 
         every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(false, "파일 크기가 제한을 초과했습니다")
 
-        // when & then
-        assertThrows<CoreException> {
-            uploadFileService.uploadFile(file, FileCategory.IMAGE, 1L)
-        }.also {
-            assertThat(it.errorType).isEqualTo(ErrorType.FILE_UNSUPPORTED_TYPE)
-        }
+        // when
+        val result = assertThrows<CoreException> { uploadFileService.uploadFile(file, FileCategory.IMAGE, 1L) }
+
+        // then
+        assertThat(result.errorType).isEqualTo(ErrorType.FILE_SIZE_EXCEEDED)
+    }
+
+    private fun createMockMultipartFile(
+        name: String = "file",
+        originalFilename: String = "test.txt",
+        contentType: String = "text/plain",
+        content: ByteArray = "test".toByteArray(),
+    ): MockMultipartFile {
+        return MockMultipartFile(
+            name,
+            originalFilename,
+            contentType,
+            content,
+        )
+    }
+
+    private fun createFile(
+        id: Long = 1L,
+        originalName: String = "test.txt",
+        key: String = "test-key",
+        size: Long = 100L,
+        mimeType: String = "text/plain",
+        status: UploadStatus = UploadStatus.PENDING,
+        category: FileCategory = FileCategory.IMAGE,
+        uploaderId: Long = 1L,
+    ): File {
+        return File(
+            id = id,
+            originalName = originalName,
+            key = key,
+            size = size,
+            mimeType = mimeType,
+            status = status,
+            createdAt = java.time.LocalDateTime.now(),
+            updatedAt = java.time.LocalDateTime.now(),
+            category = category,
+            uploaderId = uploaderId,
+        )
     }
 }
