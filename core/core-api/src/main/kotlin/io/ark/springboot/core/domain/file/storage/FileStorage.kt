@@ -28,10 +28,9 @@ class FileStorage(
 
     @Transactional
     fun updateStatus(id: Long, status: UploadStatus): File {
-        val entity = fileRepository.findByIdOrNull(id)
-            ?: throw CoreException(ErrorType.FILE_NOT_FOUND)
+        val entity = fileRepository.findByIdOrNull(id) ?: throw CoreException(ErrorType.FILE_NOT_FOUND)
         entity.status = status
-        return fileRepository.save(entity).toFile()
+        return entity.toFile()
     }
 
     companion object {
