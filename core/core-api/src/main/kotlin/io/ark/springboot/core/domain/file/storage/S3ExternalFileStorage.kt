@@ -3,12 +3,14 @@ package io.ark.springboot.core.domain.file.storage
 import io.ark.springboot.client.s3.S3Client
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
 @Service
-class S3FileStorage(
+@Profile("!test")
+class S3ExternalFileStorage(
     private val s3Client: S3Client,
-) : FileStorage {
+) : ExternalFileStorage {
 
     override fun generateKey(uploaderId: String, category: String, originalName: String): String {
         return s3Client.generateKey(uploaderId, category, originalName)

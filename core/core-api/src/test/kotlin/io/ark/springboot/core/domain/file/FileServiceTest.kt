@@ -1,11 +1,10 @@
 package io.ark.springboot.core.domain.file
 
+import io.ark.springboot.core.domain.file.storage.ExternalFileStorage
 import io.ark.springboot.core.domain.file.storage.FileStorage
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.file.FileCategory
-import io.ark.springboot.storage.db.core.file.FileEntity
-import io.ark.springboot.storage.db.core.file.FileRepository
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import io.mockk.every
 import io.mockk.mockk
@@ -14,18 +13,18 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.Optional
+import java.time.LocalDateTime
 
 class FileServiceTest {
-    private lateinit var fileRepository: FileRepository
     private lateinit var fileStorage: FileStorage
+    private lateinit var externalFileStorage: ExternalFileStorage
     private lateinit var fileService: FileService
 
     @BeforeEach
     fun setUp() {
-        fileRepository = mockk()
         fileStorage = mockk()
-        fileService = spyk(FileService(fileRepository, fileStorage))
+        externalFileStorage = mockk()
+        fileService = spyk(FileService(fileStorage, externalFileStorage))
     }
 
     @Test
@@ -33,29 +32,24 @@ class FileServiceTest {
         // given
         val fileId = 1L
 
-        val entity = FileEntity(
+        val fileData = FileData(
+            id = fileId,
             originalName = "test.txt",
             key = "test-key",
             size = 100L,
             mimeType = "text/plain",
             status = UploadStatus.PENDING,
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now(),
             category = FileCategory.IMAGE,
             uploaderId = 1L,
         )
 
-        val updatedEntity = FileEntity(
-            originalName = "test.txt",
-            key = "test-key",
-            size = 100L,
-            mimeType = "text/plain",
-            status = UploadStatus.UPLOADED,
-            category = FileCategory.IMAGE,
-            uploaderId = 1L,
-        )
+        val updatedFileData = fileData.copy(status = UploadStatus.UPLOADED)
 
-        every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { fileStorage.exists("test-key") } returns true
-        every { fileRepository.save(any()) } returns updatedEntity
+        every { fileStorage.getFile(fileId) } returns fileData
+        every { externalFileStorage.exists("test-key") } returns true
+        every { fileStorage.updateStatus(fileId, UploadStatus.UPLOADED) } returns updatedFileData
 
         // when
         val result = fileService.getFileStatus(fileId)
@@ -68,7 +62,7 @@ class FileServiceTest {
     fun `파일 상태 조회 - 존재하지 않는 파일`() {
         // given
         val fileId = 1L
-        every { fileRepository.findById(fileId) } returns Optional.empty()
+        every { fileStorage.getFile(fileId) } throws CoreException(ErrorType.FILE_NOT_FOUND)
 
         // when & then
         assertThrows<CoreException> {
@@ -85,18 +79,21 @@ class FileServiceTest {
         val key = "test-key"
         val presignedUrl = "https://example.com/presigned-url"
 
-        val entity = FileEntity(
+        val fileData = FileData(
+            id = fileId,
             originalName = "test.txt",
             key = key,
             size = 100L,
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now(),
             category = FileCategory.IMAGE,
             uploaderId = 1L,
         )
 
-        every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { fileStorage.getPresignedUrl(key) } returns presignedUrl
+        every { fileStorage.getFile(fileId) } returns fileData
+        every { externalFileStorage.getPresignedUrl(key) } returns presignedUrl
 
         // when
         val result = fileService.getDownloadUrl(fileId)
@@ -111,18 +108,21 @@ class FileServiceTest {
         val fileId = 1L
         val key = "test-key"
 
-        val entity = FileEntity(
+        val fileData = FileData(
+            id = fileId,
             originalName = "test.txt",
             key = key,
             size = 100L,
             mimeType = "text/plain",
             status = UploadStatus.UPLOADED,
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now(),
             category = FileCategory.IMAGE,
             uploaderId = 1L,
         )
 
-        every { fileRepository.findById(fileId) } returns Optional.of(entity)
-        every { fileStorage.getPresignedUrl(key) } throws RuntimeException("S3 error")
+        every { fileStorage.getFile(fileId) } returns fileData
+        every { externalFileStorage.getPresignedUrl(key) } throws RuntimeException("S3 error")
 
         // when & then
         assertThrows<CoreException> {

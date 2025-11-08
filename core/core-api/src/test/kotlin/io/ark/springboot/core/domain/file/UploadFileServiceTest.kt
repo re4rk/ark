@@ -1,20 +1,18 @@
 package io.ark.springboot.core.domain.file
 
+import io.ark.springboot.core.domain.file.storage.ExternalFileStorage
 import io.ark.springboot.core.domain.file.storage.FileStorage
 import io.ark.springboot.core.domain.file.validator.FileValidationDispatcher
 import io.ark.springboot.core.domain.file.validator.ValidationResult
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
 import io.ark.springboot.storage.db.core.file.FileCategory
-import io.ark.springboot.storage.db.core.file.FileEntity
-import io.ark.springboot.storage.db.core.file.FileRepository
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
-import io.mockk.slot
 import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,8 +25,8 @@ import org.springframework.mock.web.MockMultipartFile
 import org.springframework.transaction.support.TransactionTemplate
 
 class UploadFileServiceTest {
-    private lateinit var fileRepository: FileRepository
     private lateinit var fileStorage: FileStorage
+    private lateinit var externalFileStorage: ExternalFileStorage
     private lateinit var transactionTemplate: TransactionTemplate
     private lateinit var fileValidationDispatcher: FileValidationDispatcher
     private lateinit var applicationScope: CoroutineScope
@@ -36,12 +34,12 @@ class UploadFileServiceTest {
 
     @BeforeEach
     fun setUp() {
-        fileRepository = mockk()
         fileStorage = mockk()
+        externalFileStorage = mockk()
         transactionTemplate = FakeTransactionTemplate()
         fileValidationDispatcher = mockk()
         applicationScope = CoroutineScope(Dispatchers.Unconfined)
-        uploadFileService = spyk(UploadFileService(fileRepository, fileStorage, transactionTemplate, fileValidationDispatcher, applicationScope))
+        uploadFileService = spyk(UploadFileService(fileStorage, externalFileStorage, transactionTemplate, fileValidationDispatcher, applicationScope))
     }
 
     @Test
@@ -55,21 +53,25 @@ class UploadFileServiceTest {
         )
         val key = "test-key"
 
-        val savedEntity = FileEntity(
-            originalName = file.originalFilename,
+        val savedFileData = FileData(
+            id = 1L,
+            originalName = file.originalFilename ?: "unknown",
             key = key,
             size = file.size,
             mimeType = file.contentType ?: "application/octet-stream",
             status = UploadStatus.PENDING,
+            createdAt = java.time.LocalDateTime.now(),
+            updatedAt = java.time.LocalDateTime.now(),
             category = FileCategory.IMAGE,
             uploaderId = 1L,
         )
 
-        val updatedEntity = savedEntity.copy(status = UploadStatus.UPLOADED)
-        val entitySlot = slot<FileEntity>()
-        every { fileRepository.save(capture(entitySlot)) } returns savedEntity andThen updatedEntity
-        every { fileStorage.generateKey(any(), any(), any()) } returns key
-        coEvery { fileStorage.upload(any(), any(), any(), any()) } just runs
+        val updatedFileData = savedFileData.copy(status = UploadStatus.UPLOADED)
+
+        every { externalFileStorage.generateKey(any(), any(), any()) } returns key
+        every { fileStorage.save(any(), any(), any(), any(), any(), any(), any()) } returns savedFileData
+        every { fileStorage.updateStatus(any(), UploadStatus.UPLOADED) } returns updatedFileData
+        coEvery { externalFileStorage.upload(any(), any(), any(), any()) } just runs
         every { fileValidationDispatcher.validateFile(any()) } returns ValidationResult(true)
 
         // when
@@ -79,9 +81,6 @@ class UploadFileServiceTest {
         assertThat(result.originalName).isEqualTo(file.originalFilename)
         assertThat(result.status).isEqualTo(UploadStatus.PENDING)
         assertThat(result.size).isEqualTo(file.size)
-        assertThat(entitySlot.captured.originalName).isEqualTo(file.originalFilename)
-        assertThat(entitySlot.captured.size).isEqualTo(file.size)
-        assertThat(entitySlot.captured.mimeType).isEqualTo(file.contentType)
     }
 
     @Test

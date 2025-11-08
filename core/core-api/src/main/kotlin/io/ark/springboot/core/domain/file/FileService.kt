@@ -1,53 +1,49 @@
 package io.ark.springboot.core.domain.file
 
+import io.ark.springboot.core.domain.file.storage.ExternalFileStorage
 import io.ark.springboot.core.domain.file.storage.FileStorage
 import io.ark.springboot.core.support.error.CoreException
 import io.ark.springboot.core.support.error.ErrorType
-import io.ark.springboot.storage.db.core.file.FileRepository
 import io.ark.springboot.storage.db.core.file.UploadStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class FileService(
-    private val fileRepository: FileRepository,
     private val fileStorage: FileStorage,
+    private val externalFileStorage: ExternalFileStorage,
 ) {
 
     @Transactional
     fun getFileStatus(id: Long): FileData {
-        val entity = fileRepository.findById(id).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+        val fileData = fileStorage.getFile(id)
 
-        if (entity.status == UploadStatus.PENDING && fileStorage.exists(entity.key)) {
-            entity.status = UploadStatus.UPLOADED
+        if (fileData.status == UploadStatus.PENDING && externalFileStorage.exists(fileData.key)) {
+            return fileStorage.updateStatus(id, UploadStatus.UPLOADED)
         }
 
-        return FileData.from(entity)
+        return fileData
     }
 
     @Transactional(readOnly = true)
     fun getDownloadUrl(fileId: Long): String {
-        val entity = fileRepository.findById(fileId).orElseThrow { CoreException(ErrorType.FILE_NOT_FOUND) }
+        val fileData = fileStorage.getFile(fileId)
 
-        return when (entity.status) {
+        return when (fileData.status) {
             UploadStatus.PENDING -> {
-                if (fileStorage.exists(entity.key)) {
-                    getPresignedUrl(entity.key)
+                if (externalFileStorage.exists(fileData.key)) {
+                    externalFileStorage.getPresignedUrl(fileData.key)
                 } else {
                     throw CoreException(ErrorType.FILE_PENDING_UPLOAD)
                 }
             }
 
             UploadStatus.FAILED -> throw CoreException(ErrorType.FILE_UPLOAD_ERROR)
-            UploadStatus.UPLOADED -> getPresignedUrl(entity.key)
-        }
-    }
-
-    private fun getPresignedUrl(key: String): String {
-        return try {
-            fileStorage.getPresignedUrl(key)
-        } catch (e: Exception) {
-            throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
+            UploadStatus.UPLOADED -> try {
+                externalFileStorage.getPresignedUrl(fileData.key)
+            } catch (e: Exception) {
+                throw CoreException(ErrorType.FILE_DOWNLOAD_ERROR, cause = e)
+            }
         }
     }
 }
