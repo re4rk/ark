@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
+import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration
@@ -41,6 +42,16 @@ class WebConfig(
         return object : WebMvcConfigurer {
             override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
                 resolvers.add(UserPrincipalResolver())
+            }
+
+            override fun addCorsMappings(registry: CorsRegistry) {
+                registry.addMapping("/**")
+                    // TODO: Update allowed origins for production
+                    .allowedOrigins("*")
+                    .allowedMethods("GET", "POST", "PUT", "DELETE")
+                    .allowedHeaders("Authorization", "Content-Type")
+                    .allowCredentials(true)
+                    .maxAge(3600)
             }
         }
     }
