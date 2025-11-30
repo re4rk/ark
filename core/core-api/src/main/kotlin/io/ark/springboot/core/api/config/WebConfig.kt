@@ -47,7 +47,7 @@ class WebConfig(
             override fun addCorsMappings(registry: CorsRegistry) {
                 registry.addMapping("/**")
                     // TODO: Update allowed origins for production
-                    .allowedOrigins("*")
+                    .allowedOriginPatterns("*")
                     .allowedMethods("GET", "POST", "PUT", "DELETE")
                     .allowedHeaders("Authorization", "Content-Type")
                     .allowCredentials(true)
